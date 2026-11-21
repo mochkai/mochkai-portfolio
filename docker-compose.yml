@@ -1,0 +1,45 @@
+# Local development and production-like runs.
+#   npm run docker:dev   -> web  (next dev, hot reload)      http://localhost:3000
+#                           (= docker compose up --build --renew-anon-volumes web)
+#   npm run docker:prod  -> prod (standalone production)     http://localhost:3001
+#   npm run docker:down  -> stop and remove both
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      # File change events do not cross the WSL/Windows boundary; poll instead.
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - .:/app
+      # Keep the container's own node_modules and build cache, not the host's.
+      # `npm run docker:dev` passes --renew-anon-volumes so these are recreated from the
+      # freshly built image, picking up new dependencies after package.json changes.
+      - /app/node_modules
+      - /app/.next
+
+  prod:
+    profiles: ["prod"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3001}
+        NEXT_PUBLIC_CHATBOT_URL: ${NEXT_PUBLIC_CHATBOT_URL:-}
+        DATA_SOURCE: ${DATA_SOURCE:-json}
+    image: mochkai-portfolio:prod
+    ports:
+      - "3001:3000"
+    env_file:
+      - path: .env
+        required: false
+    restart: unless-stopped

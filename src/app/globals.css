@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Placeholder values until a design system replaces them:
+ * components only use these token utilities (bg-surface, text-muted, border-line, ...),
+ * so swapping the values below restyles the whole site.
+ */
+:root {
+  --background: #f6f7f9;
+  --surface: #ffffff;
+  --foreground: #151a24;
+  --muted: #535c6e;
+  --line: #dde1e8;
+  --accent: #2851b8;
+  --accent-foreground: #ffffff;
+  --accent-soft: #e6ecfa;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0e1117;
+    --surface: #161a22;
+    --foreground: #e7eaf0;
+    --muted: #9aa3b3;
+    --line: #2a303c;
+    --accent: #93b1ff;
+    --accent-foreground: #0e1117;
+    --accent-soft: #1d2640;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-face), var(--font-body), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-code), ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: light dark;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+}

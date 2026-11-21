@@ -1,0 +1,28 @@
+[
+  {
+    "id": "company-a",
+    "company": "Company A",
+    "role": "Senior Software Engineer",
+    "location": "Remote",
+    "startDate": "2023-02",
+    "endDate": null,
+    "highlights": [
+      "Placeholder highlight describing an outcome you delivered.",
+      "Placeholder highlight describing a system you designed or improved."
+    ],
+    "tech": ["TypeScript", "React", "Node.js"]
+  },
+  {
+    "id": "company-b",
+    "company": "Company B",
+    "role": "Software Engineer",
+    "location": "Your City, Country",
+    "startDate": "2020-06",
+    "endDate": "2023-01",
+    "highlights": [
+      "Placeholder highlight about a feature you shipped.",
+      "Placeholder highlight about collaboration or mentoring."
+    ],
+    "tech": ["Python", "PostgreSQL", "Docker"]
+  }
+]

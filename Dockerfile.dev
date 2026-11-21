@@ -1,0 +1,25 @@
+# syntax=docker/dockerfile:1
+# Development image: runs `next dev` with hot reload. Source is bind-mounted by compose.
+#
+# Runs as the image's `node` user (uid 1000), which matches the default WSL/Linux user, so
+# files `next dev` writes into the bind mount are not root-owned on the host.
+
+FROM node:22-alpine
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN chown node:node /app
+
+USER node
+
+COPY --chown=node:node package.json package-lock.json ./
+RUN npm ci
+
+# Create .next as `node` so the anonymous volume mounted there inherits node ownership.
+RUN mkdir -p /app/.next
+
+COPY --chown=node:node . .
+
+EXPOSE 3000
+# Bind to all interfaces so the host can reach the container.
+CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]
