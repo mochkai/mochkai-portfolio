@@ -1,0 +1,41 @@
+[
+  {
+    "slug": "project-one",
+    "title": "Project One",
+    "summary": "Placeholder summary for a featured project, in one sentence.",
+    "description": "Placeholder description. Explain the problem, what you built, the decisions you made and the result. Replace this text with the real story of the project.",
+    "tech": ["Next.js", "TypeScript", "Tailwind CSS"],
+    "links": {
+      "repo": "https://github.com/your-handle/project-one",
+      "live": "https://example.com"
+    },
+    "featured": true,
+    "image": "/images/projects/project-one.svg",
+    "startDate": "2025-01",
+    "endDate": "2025-06"
+  },
+  {
+    "slug": "project-two",
+    "title": "Project Two",
+    "summary": "Placeholder summary for a second featured project.",
+    "description": "Placeholder description. Describe the scope, your role and what you learned while building it.",
+    "tech": ["Python", "FastAPI", "PostgreSQL"],
+    "links": { "repo": "https://github.com/your-handle/project-two" },
+    "featured": true,
+    "image": "/images/projects/project-two.svg",
+    "startDate": "2024-03",
+    "endDate": "2024-11"
+  },
+  {
+    "slug": "project-three",
+    "title": "Project Three",
+    "summary": "Placeholder summary for a smaller side project.",
+    "description": "Placeholder description. A short note about a side project, experiment or open-source contribution.",
+    "tech": ["Node.js", "Docker"],
+    "links": { "repo": "https://github.com/your-handle/project-three" },
+    "featured": false,
+    "image": "/images/projects/project-three.svg",
+    "startDate": "2023-08",
+    "endDate": null
+  }
+]

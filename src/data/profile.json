@@ -1,0 +1,18 @@
+{
+  "name": "Your Name",
+  "title": "Software Engineer",
+  "bio": "Placeholder bio. Replace this with two or three sentences about what you build, the problems you like to work on, and what you are looking for next.",
+  "location": "Your City, Country",
+  "avatar": "/images/avatar.svg",
+  "email": "you@example.com",
+  "socials": [
+    { "label": "GitHub", "url": "https://github.com/your-handle" },
+    { "label": "LinkedIn", "url": "https://www.linkedin.com/in/your-handle" }
+  ],
+  "skills": [
+    { "category": "Languages", "items": ["TypeScript", "Python", "SQL"] },
+    { "category": "Frontend", "items": ["React", "Next.js", "Tailwind CSS"] },
+    { "category": "Backend", "items": ["Node.js", "REST APIs", "PostgreSQL"] },
+    { "category": "Tooling", "items": ["Docker", "Git", "Vitest", "Playwright"] }
+  ]
+}
