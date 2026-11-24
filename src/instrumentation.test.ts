@@ -32,8 +32,9 @@ describe("register", () => {
     expect(getServerConfig().CORS_ALLOWED_ORIGINS).toEqual(["https://ok.example"]);
   });
 
-  it("logs the invalid variables and exits with code 1 when the environment is invalid", async () => {
+  it("logs the invalid variables and exits with code 1 in production", async () => {
     const { exit, consoleError } = stubExit();
+    vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_RUNTIME", "nodejs");
     vi.stubEnv("CORS_ALLOWED_ORIGINS", "https://bad.example/");
     const register = await loadRegister();
@@ -43,6 +44,24 @@ describe("register", () => {
       expect.stringContaining("Invalid configuration"),
       expect.objectContaining({ message: expect.stringContaining("CORS_ALLOWED_ORIGINS") }),
     );
+  });
+
+  it("logs the invalid variables without exiting or throwing in development", async () => {
+    const { exit, consoleError } = stubExit();
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("NEXT_RUNTIME", "nodejs");
+    vi.stubEnv("CORS_ALLOWED_ORIGINS", "https://bad.example/");
+    const register = await loadRegister();
+    // `next dev` exits on any error thrown from register(), so development must not throw.
+    await expect(register()).resolves.toBeUndefined();
+    expect(exit).not.toHaveBeenCalled();
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining("Invalid configuration"),
+      expect.objectContaining({ message: expect.stringContaining("CORS_ALLOWED_ORIGINS") }),
+    );
+    // The failure is not cached: requests that read the config still get the error.
+    const { getServerConfig } = await import("@/lib/config/server");
+    expect(() => getServerConfig()).toThrow(/CORS_ALLOWED_ORIGINS/);
   });
 
   it.each(["edge", "", undefined])(

@@ -8,6 +8,26 @@ function mainNav(page: Page) {
 /** The not-found page's `<h1>` in server-rendered HTML. */
 const NOT_FOUND_HEADING = /<h1[^>]*>Page not found<\/h1>/;
 
+/** Escapes text the way React does when it server-renders a text node. */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
+/** Escapes RegExp metacharacters so `text` matches literally inside a pattern. */
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Matches an `<h1>` (with any attributes) whose content is exactly `text`, HTML-escaped. */
+function h1WithText(text: string): RegExp {
+  return new RegExp(`<h1[^>]*>${escapeRegExp(escapeHtml(text))}</h1>`);
+}
+
 test.describe("pages", () => {
   test("home shows the profile and featured projects", async ({ page, request }) => {
     const featured: { title: string }[] = await (
@@ -31,7 +51,7 @@ test.describe("pages", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Projects" })).toBeVisible();
     await page.getByRole("link", { name: first.title, exact: true }).click();
 
-    await expect(page).toHaveURL(new RegExp(`/projects/${first.slug}$`));
+    await expect(page).toHaveURL(new RegExp(`/projects/${escapeRegExp(first.slug)}$`));
     await expect(page.getByRole("heading", { level: 1, name: first.title })).toBeVisible();
     const tech = page.getByRole("list", { name: `Technologies used in ${first.title}` });
     await expect(tech.getByRole("listitem")).toHaveText(first.tech);
@@ -72,7 +92,7 @@ test.describe("pages", () => {
       const res = await request.get(`/projects/${slug}`);
       expect(res.status(), slug).toBe(200);
       const html = await res.text();
-      expect(html).toMatch(new RegExp(`<h1[^>]*>${title}</h1>`));
+      expect(html).toMatch(h1WithText(title));
       expect(html).not.toMatch(NOT_FOUND_HEADING);
     }
   });

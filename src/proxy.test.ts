@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 import projectsData from "@/data/projects.json";
@@ -16,10 +17,22 @@ function rewriteTarget(path: string): string | null {
   return null;
 }
 
+/** True when Next.js would run Proxy for `url`, judged from the exported `config`. */
+function runsFor(url: string): boolean {
+  return unstable_doesMiddlewareMatch({ config, url });
+}
+
 describe("proxy", () => {
-  it("is scoped to project detail pages", () => {
-    expect(config.matcher).toBe("/projects/:slug");
+  it.each(["/projects/project-one", "/projects/does-not-exist"])("runs for %s", (url) => {
+    expect(runsFor(url)).toBe(true);
   });
+
+  it.each(["/", "/projects", "/projects/a/b", "/api/projects", "/about", "/experience"])(
+    "does not run for %s",
+    (url) => {
+      expect(runsFor(url)).toBe(false);
+    },
+  );
 
   it.each(projectsData.map((p) => p.slug))("passes the known slug %s through", (slug) => {
     expect(rewriteTarget(`/projects/${slug}`)).toBeNull();
@@ -29,6 +42,13 @@ describe("proxy", () => {
     "rewrites the unknown project %s to an unmatched route (404)",
     (path) => {
       expect(rewriteTarget(path)).toBe(UNMATCHED_ROUTE_PATH);
+    },
+  );
+
+  it.each(["/", "/projects", "/projects/does-not-exist/nested", "/api/projects"])(
+    "passes %s through if it is ever called for a non-detail path",
+    (path) => {
+      expect(rewriteTarget(path)).toBeNull();
     },
   );
 });
