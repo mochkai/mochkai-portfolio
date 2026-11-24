@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ErrorPage from "@/app/error";
+import GlobalError from "@/app/global-error";
 import NotFound from "@/app/not-found";
 import { makeProject, projectFixtures } from "../../tests/fixtures";
 import { NavLinks } from "./NavLinks";
@@ -184,6 +185,23 @@ describe("ErrorPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(retry).toHaveBeenCalledTimes(1);
     expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+});
+
+describe("GlobalError", () => {
+  it("renders its own document with an alert and calls retry when the button is pressed", async () => {
+    const retry = vi.fn();
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = new Error("layout failed");
+    render(<GlobalError error={error} retry={retry} />);
+    // React treats <html> and <body> as singletons and applies them to the document's own.
+    expect(document.documentElement).toHaveAttribute("lang", "en");
+    expect(document.body.querySelector("main")).not.toBeNull();
+    expect(screen.getByRole("alert")).toHaveTextContent("Something went wrong");
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(retry).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalledWith(error);
     consoleError.mockRestore();
   });
 });

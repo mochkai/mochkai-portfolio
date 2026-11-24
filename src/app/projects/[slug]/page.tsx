@@ -28,15 +28,16 @@ export async function generateMetadata({
 }
 
 /**
- * Project detail page. Unknown slugs render the not-found page with a `noindex` robots tag
- * (the HTTP status stays 200; see the note below).
+ * Project detail page. Unknown slugs are answered with a 404 by Proxy (`src/proxy.ts`)
+ * before this page renders; the `notFound()` below is a fallback.
  */
 export default async function ProjectPage({ params }: PageProps<"/projects/[slug]">) {
   const { slug } = await params;
   const project = await getRepository().getProjectBySlug(slug);
-  // Known limitation: with Cache Components the static shell is streamed with a 200 before
-  // this request-time notFound() runs, so unknown slugs get the not-found UI and noindex but
-  // not a 404 status. Fix later with a slug check in Proxy that returns 404 before rendering.
+  // Fallback only: with Cache Components the static shell is streamed with a 200 before this
+  // request-time notFound() runs, so on its own it gives the not-found UI and noindex but not
+  // a 404 status. Proxy rejects unknown slugs with a real 404 before rendering; this still
+  // covers requests that bypass it (e.g. if Proxy's slug list and the repository disagree).
   if (!project) notFound();
 
   const { repo, live } = project.links;
@@ -62,7 +63,8 @@ export default async function ProjectPage({ params }: PageProps<"/projects/[slug
         width={1200}
         height={675}
         unoptimized={isSvgImage(project.image)}
-        priority
+        loading="eager"
+        fetchPriority="high"
         className="mt-10 aspect-video w-full rounded-sm border border-line object-cover"
       />
 

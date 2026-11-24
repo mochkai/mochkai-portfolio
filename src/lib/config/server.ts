@@ -40,7 +40,6 @@ const corsOriginList = z
   .pipe(z.array(corsOriginSchema));
 
 const serverEnvSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATA_SOURCE: z.enum(DATA_SOURCES).default("json"),
   CORS_ALLOWED_ORIGINS: corsOriginList,
   // Placeholders for a future remote content source (headless CMS or content API).

@@ -32,6 +32,7 @@ npm run docker:down   # stop and remove both
 - The dev service (`web`) runs `next dev` as the `node` user, with the source bind-mounted. File watching uses polling so it works across the WSL/Windows boundary.
 - `docker:dev` passes `--renew-anon-volumes` so the container's `node_modules` and `.next` volumes are recreated from the freshly built image, which makes new dependencies show up after `package.json` changes.
 - The prod service builds `Dockerfile` (multi-stage, standalone server, non-root user, `/api/health` healthcheck) and maps container port 3000 to host port 3001.
+- Both Dockerfiles pin the base image to `node:22.23.5-alpine3.24`. Bump both `FROM` lines together.
 - Build-time variables: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_CHATBOT_URL` and `DATA_SOURCE` are passed as build args, so changing them requires a rebuild (`docker:prod` already uses `--build`). Runtime variables: `CORS_ALLOWED_ORIGINS`, `CONTENT_API_URL` and `CONTENT_API_TOKEN`, read from `.env` when the container starts.
 
 ## Scripts
@@ -54,7 +55,7 @@ npm run docker:down   # stop and remove both
 
 ## Environment variables
 
-Copy `.env.example` to `.env`. Values are validated with zod; invalid values fail with a readable message, and empty values count as unset.
+Copy `.env.example` to `.env`. Values are validated with zod when the server starts. Invalid values stop the server with exit code 1 and log every problem; empty values count as unset.
 
 | Name                      | Required | Default                 | When    | Description                                                                                             |
 | ------------------------- | -------- | ----------------------- | ------- | ------------------------------------------------------------------------------------------------------- |
@@ -97,7 +98,11 @@ Errors are JSON `{ "error": "<message>" }`:
 - `404` `{ "error": "Project not found" }`: unknown or malformed slug. The input is never echoed back.
 - `500` `{ "error": "Internal server error" }`: unexpected failure; details are only in the server log.
 
+Unknown `/projects/<slug>` pages show the not-found page with HTTP 404. The check runs in Proxy (`src/proxy.ts`) against the bundled project data, is case-sensitive, and must be updated when content moves to a CMS.
+
 CORS: no cross-origin access by default. Set `CORS_ALLOWED_ORIGINS` to allow browser origins. For an allowed origin (or any origin with `*`), responses carry `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods: GET, OPTIONS`, `Access-Control-Allow-Headers: Content-Type` and `Access-Control-Max-Age: 86400`. Other origins get only `Vary: Origin`. `OPTIONS` requests are answered with `204` and the same CORS headers.
+
+Every response, including pages and static files, also sends `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY` and `Content-Security-Policy: frame-ancestors 'none'`, so the site cannot be embedded in frames. The `X-Powered-By` header is disabled.
 
 ## Testing
 
@@ -125,7 +130,6 @@ scripts/        Build helper scripts
 
 ## Known limitations
 
-- Unknown `/projects/<slug>` pages render the not-found UI with `noindex` but return HTTP 200, a side effect of Cache Components. The planned fix is a slug check in Proxy. The API does return a real 404.
 - There is no dark-mode toggle; the site follows the system setting.
 
 ## Deployment

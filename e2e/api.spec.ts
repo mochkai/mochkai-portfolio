@@ -79,6 +79,27 @@ test.describe("API", () => {
     expect(res.headers()["vary"]).toMatch(/Origin/i);
   });
 
+  for (const path of ["/", "/projects/project-one", "/api/profile", "/api/health"]) {
+    test(`${path} sends security headers and no X-Powered-By`, async ({ request }) => {
+      const res = await request.get(path, { headers: { Origin: "https://chat.example.com" } });
+      expect(res.status()).toBe(200);
+      const headers = res.headers();
+      expect(headers["x-content-type-options"]).toBe("nosniff");
+      expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+      expect(headers["x-frame-options"]).toBe("DENY");
+      expect(headers["content-security-policy"]).toBe("frame-ancestors 'none'");
+      expect(headers["x-powered-by"]).toBeUndefined();
+    });
+  }
+
+  test("security headers leave the API's CORS headers intact", async ({ request }) => {
+    const res = await request.get("/api/profile", {
+      headers: { Origin: "https://chat.example.com" },
+    });
+    expect(res.headers()["vary"]).toMatch(/Origin/i);
+    expect(res.headers()["x-frame-options"]).toBe("DENY");
+  });
+
   test("OPTIONS preflight answers 204", async ({ request }) => {
     const res = await request.fetch("/api/projects", {
       method: "OPTIONS",

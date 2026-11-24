@@ -5,6 +5,9 @@ function mainNav(page: Page) {
   return page.getByRole("navigation", { name: "Main" });
 }
 
+/** The not-found page's `<h1>` in server-rendered HTML. */
+const NOT_FOUND_HEADING = /<h1[^>]*>Page not found<\/h1>/;
+
 test.describe("pages", () => {
   test("home shows the profile and featured projects", async ({ page, request }) => {
     const featured: { title: string }[] = await (
@@ -40,12 +43,38 @@ test.describe("pages", () => {
     await expect(page.locator('meta[name="robots"][content="noindex"]')).toHaveCount(1);
   });
 
-  // Known limitation: with Cache Components the prerendered shell is streamed with a 200
-  // before the page calls notFound(), so the status stays 200 (Next adds noindex instead).
-  // Un-fixme once a slug check in Proxy returns a real 404 before rendering starts.
-  test.fixme("unknown project slug responds with HTTP 404", async ({ page }) => {
-    const response = await page.goto("/projects/does-not-exist");
-    expect(response?.status()).toBe(404);
+  // Browser-free status checks (`request` fixture only). Proxy rejects unknown slugs before
+  // rendering, so the response is a real 404 that still carries the not-found page.
+  test("unknown project slug responds with HTTP 404 and the not-found page", async ({
+    request,
+  }) => {
+    for (const path of ["/projects/does-not-exist", "/projects/PROJECT-ONE"]) {
+      const res = await request.get(path);
+      expect(res.status(), path).toBe(404);
+      const html = await res.text();
+      expect(html).toMatch(NOT_FOUND_HEADING);
+      expect(html).toMatch(/<meta name="robots" content="noindex"/);
+    }
+  });
+
+  test("unknown project slug with a trailing slash ends in a 404", async ({ request }) => {
+    const res = await request.get("/projects/does-not-exist/");
+    expect(res.status()).toBe(404);
+    expect(await res.text()).toMatch(NOT_FOUND_HEADING);
+  });
+
+  test("every known project slug responds with HTTP 200", async ({ request }) => {
+    const projects: { slug: string; title: string }[] = await (
+      await request.get("/api/projects")
+    ).json();
+    expect(projects.length).toBeGreaterThan(0);
+    for (const { slug, title } of projects) {
+      const res = await request.get(`/projects/${slug}`);
+      expect(res.status(), slug).toBe(200);
+      const html = await res.text();
+      expect(html).toMatch(new RegExp(`<h1[^>]*>${title}</h1>`));
+      expect(html).not.toMatch(NOT_FOUND_HEADING);
+    }
   });
 
   for (const [path, label] of [
