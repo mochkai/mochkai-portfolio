@@ -301,6 +301,35 @@ describe("unexpected repository errors", () => {
     expect(consoleError).toHaveBeenCalledWith(expect.stringContaining("/api/profile"), failure);
   });
 
+  it("still returns a JSON 500 without CORS headers when the config lookup throws", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.resetModules();
+    const configError = new Error("Invalid server environment variables");
+    vi.doMock("@/lib/config/server", () => ({
+      getServerConfig: () => {
+        throw configError;
+      },
+    }));
+    try {
+      const { withApiErrorHandling } = await import("@/lib/http/api");
+      const failure = new Error("handler failed");
+      const handler = withApiErrorHandling<[Request]>(async () => {
+        throw failure;
+      });
+
+      const res = await handler(req("/api/profile", { origin: ORIGIN }));
+      expect(res.status).toBe(500);
+      expect(res.headers.get("content-type")).toMatch(/application\/json/);
+      expect(res.headers.get("access-control-allow-origin")).toBeNull();
+      expect(await res.json()).toEqual({ error: "Internal server error" });
+      // Both the original failure and the secondary config error are logged.
+      expect(consoleError).toHaveBeenCalledWith(expect.stringContaining("/api/profile"), failure);
+      expect(consoleError).toHaveBeenCalledWith(expect.any(String), configError);
+    } finally {
+      vi.doUnmock("@/lib/config/server");
+    }
+  });
+
   it("still returns 400 for bad input before touching the repository", async () => {
     const { routes } = await loadRoutesWithFailingRepository();
     const res = await routes.projects.GET(req("/api/projects?featured=nope"));

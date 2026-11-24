@@ -31,6 +31,8 @@ export const INTERNAL_ERROR_MESSAGE = "Internal server error";
  * Wraps a route handler so an unexpected error (e.g. content failing validation, or a
  * remote content source being down) becomes a `500 { error }` JSON response with CORS
  * headers, instead of Next.js's default error page. The real error is logged on the server.
+ * If the CORS headers cannot be built either (invalid server config), the 500 JSON body is
+ * still returned, without CORS headers.
  *
  * @example export const GET = withApiErrorHandling(async (request) => jsonResponse(request, data));
  */
@@ -43,7 +45,14 @@ export function withApiErrorHandling<Args extends [Request, ...unknown[]]>(
     } catch (error) {
       const [request] = args;
       console.error(`[api] ${request.method} ${new URL(request.url).pathname} failed:`, error);
-      return jsonError(request, 500, INTERNAL_ERROR_MESSAGE);
+      try {
+        return jsonError(request, 500, INTERNAL_ERROR_MESSAGE);
+      } catch (corsError) {
+        // Building CORS headers reads the server config, which can itself throw (e.g. an
+        // invalid CORS_ALLOWED_ORIGINS). Still answer with the JSON 500, just without CORS.
+        console.error("[api] could not build CORS headers for the error response:", corsError);
+        return Response.json({ error: INTERNAL_ERROR_MESSAGE }, { status: 500 });
+      }
     }
   };
 }

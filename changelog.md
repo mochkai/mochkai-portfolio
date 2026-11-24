@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Global error page: a last-resort "Something went wrong" page with a retry button for failures in the root layout.
+
+### Changed
+
+- Invalid server configuration stops the server at startup with exit code 1 and logs each problem, in `npm start`, `npm run dev` and Docker, instead of answering every request with an error.
+- `NODE_ENV` is no longer validated as part of the server configuration.
+- Docker base images are pinned to `node:22.23.5-alpine3.24`.
+- Hero and project images use `loading="eager"` and `fetchPriority="high"` instead of the deprecated `priority` prop.
+
+### Fixed
+
+- Unknown `/projects/<slug>` URLs return a real HTTP 404 with the not-found page (previously HTTP 200).
+- An API error response still returns the JSON 500 body when the CORS headers cannot be built, for example because `CORS_ALLOWED_ORIGINS` is invalid.
+
+### Security
+
+- Security headers on all responses: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY` and `Content-Security-Policy: frame-ancestors 'none'`.
+- The `X-Powered-By` header is no longer sent.
+
 ## [0.1.0] - 2026-11-21
 
 ### Added
@@ -19,9 +40,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Testing: Vitest unit, component and API route tests, and Playwright e2e tests against a production build on port 3100 (`E2E_PORT`).
 - Documentation: README with setup, Docker, environment variables, API and workflow guides.
 
-### Known issues
-
-- Unknown `/projects/<slug>` pages show the not-found UI with `noindex` but return HTTP 200 because of Cache Components; the API returns a proper 404.
-
-[Unreleased]: https://github.com/mochkai/mochkai-portfolio/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/mochkai/mochkai-portfolio/releases/tag/v0.1.0
+[Unreleased]: https://github.com/mochkai/mochkai-portfolio/commits/master

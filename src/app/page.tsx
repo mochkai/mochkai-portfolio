@@ -24,7 +24,8 @@ export default async function HomePage() {
           width={112}
           height={112}
           unoptimized={isSvgImage(profile.avatar)}
-          priority
+          loading="eager"
+          fetchPriority="high"
           className="size-24 shrink-0 rounded-full border border-line sm:size-28"
         />
         <div className="max-w-2xl">

@@ -4,7 +4,6 @@ import { parseServerConfig } from "./server";
 describe("parseServerConfig", () => {
   it("applies defaults for an empty environment", () => {
     expect(parseServerConfig({})).toEqual({
-      NODE_ENV: "development",
       DATA_SOURCE: "json",
       CORS_ALLOWED_ORIGINS: [],
     });
@@ -12,14 +11,12 @@ describe("parseServerConfig", () => {
 
   it("treats empty strings as unset", () => {
     const config = parseServerConfig({
-      NODE_ENV: "",
       DATA_SOURCE: "",
       CORS_ALLOWED_ORIGINS: "",
       CONTENT_API_URL: "",
       CONTENT_API_TOKEN: "",
     });
     expect(config).toEqual({
-      NODE_ENV: "development",
       DATA_SOURCE: "json",
       CORS_ALLOWED_ORIGINS: [],
     });
@@ -44,13 +41,11 @@ describe("parseServerConfig", () => {
 
   it("reads valid explicit values", () => {
     const config = parseServerConfig({
-      NODE_ENV: "production",
       DATA_SOURCE: "json",
       CONTENT_API_URL: "https://cms.example.com/api",
       CONTENT_API_TOKEN: "secret",
     });
     expect(config).toMatchObject({
-      NODE_ENV: "production",
       CONTENT_API_URL: "https://cms.example.com/api",
       CONTENT_API_TOKEN: "secret",
     });
@@ -58,12 +53,18 @@ describe("parseServerConfig", () => {
 
   it.each([
     ["DATA_SOURCE", "cms"],
-    ["NODE_ENV", "staging"],
     ["CONTENT_API_URL", "not-a-url"],
   ])("throws a readable error naming %s=%s", (key, value) => {
     expect(() => parseServerConfig({ [key]: value })).toThrow(
       new RegExp(`Invalid server environment variables[\\s\\S]*${key}`),
     );
+  });
+
+  it("ignores NODE_ENV, so non-standard values like staging do not fail parsing", () => {
+    // Next.js and Node own NODE_ENV; the app config neither validates nor exposes it.
+    const config = parseServerConfig({ NODE_ENV: "staging" });
+    expect(config).not.toHaveProperty("NODE_ENV");
+    expect(config.DATA_SOURCE).toBe("json");
   });
 
   it("lists every invalid variable in one error", () => {
