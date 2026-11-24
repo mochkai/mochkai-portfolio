@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Invalid server configuration stops the server at startup with exit code 1 and logs each problem, in `npm start`, `npm run dev` and Docker, instead of answering every request with an error.
+- Invalid server configuration stops the production server (`npm start`, `docker:prod`) at startup with exit code 1 and logs each problem, instead of answering every request with an error. `next dev` (`npm run dev`, `docker:dev`) logs them and keeps running, showing the error on each request.
 - `NODE_ENV` is no longer validated as part of the server configuration.
 - Docker base images are pinned to `node:22.23.5-alpine3.24`.
 - Hero and project images use `loading="eager"` and `fetchPriority="high"` instead of the deprecated `priority` prop.

@@ -55,7 +55,7 @@ npm run docker:down   # stop and remove both
 
 ## Environment variables
 
-Copy `.env.example` to `.env`. Values are validated with zod when the server starts. Invalid values stop the server with exit code 1 and log every problem; empty values count as unset.
+Copy `.env.example` to `.env`. Values are validated with zod when the server starts. Invalid values log every problem and stop the production server with exit code 1; `next dev` keeps running and shows the error on each request. Empty values count as unset.
 
 | Name                      | Required | Default                 | When    | Description                                                                                             |
 | ------------------------- | -------- | ----------------------- | ------- | ------------------------------------------------------------------------------------------------------- |
