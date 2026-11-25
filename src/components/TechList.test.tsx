@@ -18,3 +18,13 @@ describe("TechList", () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+describe("TechList tags", () => {
+  it("renders each technology as a Tag chip", () => {
+    render(<TechList items={["Go"]} />);
+    const list = screen.getByRole("list", { name: "Technologies" });
+    const tag = within(list).getByText("Go");
+    expect(tag.tagName).toBe("SPAN");
+    expect(tag).toHaveClass("font-mono", "text-glow");
+  });
+});

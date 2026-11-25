@@ -1,3 +1,5 @@
+import { Tag } from "@/components/ui/Tag";
+
 /** Props for {@link TechList}. */
 export interface TechListProps {
   items: readonly string[];
@@ -5,17 +7,14 @@ export interface TechListProps {
   label?: string;
 }
 
-/** Inline list of technology names rendered as small monospace tags. */
+/** Inline list of technology names rendered as {@link Tag} chips. */
 export function TechList({ items, label = "Technologies" }: TechListProps) {
   if (items.length === 0) return null;
   return (
     <ul aria-label={label} className="flex flex-wrap gap-2">
       {items.map((item) => (
-        <li
-          key={item}
-          className="rounded-sm bg-accent-soft px-2 py-0.5 font-mono text-xs text-foreground"
-        >
-          {item}
+        <li key={item}>
+          <Tag>{item}</Tag>
         </li>
       ))}
     </ul>

@@ -8,11 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Arcane Tech design system foundation (#4): base UI primitives in `src/components/ui/` (`Card`, `Button`, `ButtonLink`, `Tag`, `Label`, `StatTile`, `StatGrid`), glow utilities (`shadow-glow*`, `inset-shadow-rune`, `text-shadow-glow*`), a `usePrefersReducedMotion` hook and a `cx` class-name helper.
 - `DESIGN.md` design brief (responsive, games/tech feel, black and blue with neon highlights, motion) and the mochkai logo at `public/images/logo.svg`.
 - Global error page: a last-resort "Something went wrong" page with a retry button for failures in the root layout.
 
 ### Changed
 
+- One dark color scheme replaces the placeholder light and dark tokens: dark slate background, neon blue accents and white highlights, with every text/background pair meeting WCAG AA. Light mode is gone.
+- Fonts are now Space Grotesk (headings), Inter (body) and JetBrains Mono (labels, tags, stats).
+- Technology lists render as mono `Tag` chips.
+- Animations and transitions are turned off when the system asks for reduced motion.
+- `DESIGN.md` documents the Arcane Tech direction: audience, concept, journey structure, privacy rules (no age signals), typography, palette with contrast ratios, motion and the base primitives.
 - `DESIGN.md` now also documents the development conventions: stack, quality gates, testing, configuration, Docker and workflow. It also records the owner's decisions on reduced motion, the dark color tokens and the Node version.
 - Invalid server configuration stops the production server (`npm start`, `docker:prod`) at startup with exit code 1 and logs each problem, instead of answering every request with an error. `next dev` (`npm run dev`, `docker:dev`) logs them and keeps running, showing the error on each request.
 - `NODE_ENV` is no longer validated as part of the server configuration.
