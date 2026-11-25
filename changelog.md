@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- `DESIGN.md` now also documents the development conventions: stack, quality gates, testing, configuration, Docker, workflow and open questions for the owner.
 - Invalid server configuration stops the production server (`npm start`, `docker:prod`) at startup with exit code 1 and logs each problem, instead of answering every request with an error. `next dev` (`npm run dev`, `docker:dev`) logs them and keeps running, showing the error on each request.
 - `NODE_ENV` is no longer validated as part of the server configuration.
 - Docker base images are pinned to `node:22.23.5-alpine3.24`.
