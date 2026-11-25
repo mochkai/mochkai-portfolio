@@ -1,25 +1,27 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, IBM_Plex_Mono, Public_Sans } from "next/font/google";
+import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { publicConfig } from "@/lib/config/public";
 import { getRepository } from "@/lib/data";
 import "./globals.css";
 
-const displayFont = Bricolage_Grotesque({
+/** Space Grotesk: headings and display text (`font-display`). */
+const displayFont = Space_Grotesk({
   variable: "--font-display-face",
   subsets: ["latin"],
 });
 
-const bodyFont = Public_Sans({
+/** Inter: body text (`font-sans`). */
+const bodyFont = Inter({
   variable: "--font-body",
   subsets: ["latin"],
 });
 
-const codeFont = IBM_Plex_Mono({
+/** JetBrains Mono: HUD labels, tags and stats (`font-mono`). */
+const codeFont = JetBrains_Mono({
   variable: "--font-code",
   subsets: ["latin"],
-  weight: ["400", "500"],
 });
 
 /** Site-wide metadata derived from the profile. */

@@ -1,40 +1,42 @@
 @import "tailwindcss";
 
 /*
- * Design tokens. Placeholder values until a design system replaces them:
- * components only use these token utilities (bg-surface, text-muted, border-line, ...),
- * so swapping the values below restyles the whole site.
+ * Arcane Tech design tokens: one dark scheme, no light mode.
+ * Components only use the token utilities (bg-surface, text-muted, border-line, shadow-glow, ...),
+ * never raw colors. Roles and measured contrast ratios are documented in DESIGN.md.
  */
 :root {
-  --background: #f6f7f9;
-  --surface: #ffffff;
-  --foreground: #151a24;
-  --muted: #535c6e;
-  --line: #dde1e8;
-  --accent: #2851b8;
-  --accent-foreground: #ffffff;
-  --accent-soft: #e6ecfa;
-}
+  /* Page and panels. */
+  --background: #07090f;
+  --surface: #0e1420;
+  --surface-raised: #141c2c;
+  --line: #12304d;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0e1117;
-    --surface: #161a22;
-    --foreground: #e7eaf0;
-    --muted: #9aa3b3;
-    --line: #2a303c;
-    --accent: #93b1ff;
-    --accent-foreground: #0e1117;
-    --accent-soft: #1d2640;
-  }
+  /* Text. */
+  --foreground: #eef6ff;
+  --muted: #8aa3bd;
+
+  /* Blues. `brand` is the logo blue: fills, borders and large text only (3.88:1 on background). */
+  --brand: #0071bc;
+  --neon: #39a8ff;
+  --glow: #7cc7ff;
+
+  /* Legacy role names kept so existing components keep working. */
+  --accent: var(--neon);
+  --accent-foreground: var(--background);
+  --accent-soft: #0b2440;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-neon: var(--neon);
+  --color-glow: var(--glow);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent-soft: var(--accent-soft);
@@ -44,9 +46,23 @@
   --font-mono: var(--font-code), ui-monospace, monospace;
 }
 
+/*
+ * Glow helpers. Static values (rgb of --neon #39a8ff) so they resolve without the cascade.
+ * shadow-glow-sm / shadow-glow / shadow-glow-lg: outer neon halo for buttons, cards, tiles.
+ * inset-shadow-rune: faint inner light for panels. text-shadow-glow: glowing headline or value.
+ */
+@theme {
+  --shadow-glow-sm: 0 0 10px rgb(57 168 255 / 0.3);
+  --shadow-glow: 0 0 16px rgb(57 168 255 / 0.45);
+  --shadow-glow-lg: 0 0 28px rgb(57 168 255 / 0.55);
+  --inset-shadow-rune: inset 0 0 30px rgb(57 168 255 / 0.06);
+  --text-shadow-glow: 0 0 18px rgb(57 168 255 / 0.55), 0 0 2px rgb(255 255 255 / 0.5);
+  --text-shadow-glow-sm: 0 0 10px rgb(57 168 255 / 0.6);
+}
+
 @layer base {
   html {
-    color-scheme: light dark;
+    color-scheme: dark;
   }
 
   body {
@@ -54,9 +70,39 @@
     color: var(--foreground);
   }
 
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display;
+  }
+
+  ::selection {
+    background: rgb(57 168 255 / 0.35);
+    color: var(--foreground);
+  }
+
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--neon);
     outline-offset: 3px;
     border-radius: 2px;
+  }
+}
+
+/*
+ * Reduced-motion baseline: every transition and animation finishes instantly and smooth
+ * scrolling is off. Components also add `motion-reduce:` utilities for transforms; JS-driven
+ * effects use the `usePrefersReducedMotion` hook.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
