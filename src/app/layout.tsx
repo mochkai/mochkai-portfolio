@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { BoostMeter } from "@/components/BoostMeter";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { publicConfig } from "@/lib/config/public";
@@ -36,7 +37,10 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-/** Root layout: fonts, skip link, header, main landmark and footer. */
+/**
+ * Root layout: fonts, skip link, boost meter, HUD header, main landmark and footer.
+ * The header is sticky from `sm` up, so `main` gets a matching scroll margin for the skip link.
+ */
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const profile = await getRepository().getProfile();
 
@@ -48,12 +52,16 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col font-sans">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-sm focus:bg-surface focus:px-3 focus:py-2"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-60 focus:rounded-sm focus:border focus:border-neon focus:bg-surface-raised focus:px-4 focus:py-2 focus:font-display focus:font-medium focus:text-foreground focus:shadow-glow"
         >
           Skip to content
         </a>
+        <BoostMeter />
         <SiteHeader name={profile.name} />
-        <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-12 sm:px-6 sm:py-16">
+        <main
+          id="main"
+          className="mx-auto w-full max-w-5xl flex-1 px-4 py-12 sm:scroll-mt-16 sm:px-6 sm:py-16"
+        >
           {children}
         </main>
         <SiteFooter name={profile.name} socials={profile.socials} />

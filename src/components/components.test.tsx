@@ -1,10 +1,11 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ErrorPage from "@/app/error";
 import GlobalError from "@/app/global-error";
 import NotFound from "@/app/not-found";
 import { makeProject, projectFixtures } from "../../tests/fixtures";
+import { BoostMeter } from "./BoostMeter";
 import { NavLinks } from "./NavLinks";
 import { PageHeader } from "./PageHeader";
 import { ProjectList } from "./ProjectList";
@@ -99,6 +100,25 @@ describe("NavLinks", () => {
     expect(screen.getByRole("link", { name: "Projects" })).not.toHaveAttribute("aria-current");
   });
 
+  it("shows the current page with a filled marker and an underline (non-color cues)", () => {
+    pathname.current = "/projects/project-one";
+    render(<NavLinks items={items} />);
+    const active = screen.getByRole("link", { name: "Projects" });
+    const inactive = screen.getByRole("link", { name: "About" });
+    // Marker plus underline bar on the current page, marker only elsewhere; all decorative.
+    expect(active.querySelectorAll('[aria-hidden="true"]')).toHaveLength(2);
+    expect(inactive.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1);
+    expect(active.querySelector('[aria-hidden="true"]')).toHaveClass("bg-neon");
+    expect(inactive.querySelector('[aria-hidden="true"]')).not.toHaveClass("bg-neon");
+  });
+
+  it("turns link transitions off under reduced motion", () => {
+    render(<NavLinks items={items} />);
+    for (const link of screen.getAllByRole("link")) {
+      expect(link).toHaveClass("duration-150", "motion-reduce:transition-none");
+    }
+  });
+
   it("marks nothing on an unrelated page", () => {
     pathname.current = "/experience";
     render(<NavLinks items={items} />);
@@ -130,6 +150,17 @@ describe("SiteHeader", () => {
   });
 });
 
+describe("SiteHeader logo", () => {
+  it("shows the logo as a decorative image inside the home link", () => {
+    render(<SiteHeader name="Ada Fixture" />);
+    const home = screen.getByRole("link", { name: "Ada Fixture" });
+    const logo = home.querySelector("img");
+    expect(logo).not.toBeNull();
+    expect(logo).toHaveAttribute("alt", "");
+    expect(logo?.getAttribute("src")).toContain("logo.svg");
+  });
+});
+
 describe("SiteFooter", () => {
   it("renders the name and social links that open safely in a new tab", () => {
     render(
@@ -157,6 +188,105 @@ describe("SiteFooter", () => {
   it("omits the social list when there are no socials", () => {
     render(<SiteFooter name="Ada" socials={[]} />);
     expect(screen.queryByRole("list")).toBeNull();
+  });
+
+  it("hides the rune-line divider from assistive tech", () => {
+    render(<SiteFooter name="Ada" socials={[]} />);
+    const divider = screen.getByRole("contentinfo").firstElementChild;
+    expect(divider).toHaveAttribute("aria-hidden", "true");
+  });
+});
+
+describe("BoostMeter", () => {
+  /** Sets the document size and scroll offset that the meter reads. */
+  function setScroll(scrollY: number, scrollHeight = 3000, clientHeight = 1000) {
+    Object.defineProperty(document.documentElement, "scrollHeight", {
+      configurable: true,
+      value: scrollHeight,
+    });
+    Object.defineProperty(document.documentElement, "clientHeight", {
+      configurable: true,
+      value: clientHeight,
+    });
+    Object.defineProperty(window, "scrollY", { configurable: true, value: scrollY });
+  }
+
+  /** Stubs `matchMedia` so `usePrefersReducedMotion` reports `reduce`. */
+  function stubReducedMotion(reduce: boolean) {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => ({
+        matches: reduce,
+        media: "(prefers-reduced-motion: reduce)",
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    setScroll(0, 0, 0);
+  });
+
+  it("is decorative, ignores the pointer and starts empty at the top", () => {
+    setScroll(0);
+    render(<BoostMeter />);
+    const meter = screen.getByTestId("boost-meter");
+    expect(meter).toHaveAttribute("aria-hidden", "true");
+    expect(meter).toHaveClass("pointer-events-none", "fixed");
+    expect(meter).toHaveAttribute("data-progress", "0.000");
+    expect(screen.getByTestId("boost-meter-fill")).toHaveStyle({ transform: "scaleX(0)" });
+  });
+
+  it("fills with scroll progress, one update per animation frame", () => {
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal(
+      "requestAnimationFrame",
+      vi.fn((callback: FrameRequestCallback) => frames.push(callback)),
+    );
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    setScroll(0);
+    render(<BoostMeter />);
+    const meter = screen.getByTestId("boost-meter");
+    const fill = screen.getByTestId("boost-meter-fill");
+
+    setScroll(1000);
+    fireEvent.scroll(window);
+    fireEvent.scroll(window);
+    expect(frames).toHaveLength(1);
+    act(() => frames.shift()?.(0));
+    expect(meter).toHaveAttribute("data-progress", "0.500");
+    expect(fill).toHaveStyle({ transform: "scaleX(0.5)" });
+
+    setScroll(2000);
+    fireEvent.scroll(window);
+    act(() => frames.shift()?.(0));
+    expect(meter).toHaveAttribute("data-progress", "1.000");
+    expect(fill).toHaveStyle({ transform: "scaleX(1)" });
+  });
+
+  it("eases the fill when motion is allowed", () => {
+    stubReducedMotion(false);
+    render(<BoostMeter />);
+    expect(screen.getByTestId("boost-meter-fill")).toHaveClass("transition-transform");
+  });
+
+  it("jumps without easing under reduced motion", () => {
+    stubReducedMotion(true);
+    render(<BoostMeter />);
+    const fill = screen.getByTestId("boost-meter-fill");
+    expect(fill).toHaveClass("transition-none");
+    expect(fill).not.toHaveClass("transition-transform");
+  });
+
+  it("stops listening when unmounted", () => {
+    const remove = vi.spyOn(window, "removeEventListener");
+    const { unmount } = render(<BoostMeter />);
+    unmount();
+    expect(remove).toHaveBeenCalledWith("scroll", expect.any(Function));
+    expect(remove).toHaveBeenCalledWith("resize", expect.any(Function));
+    remove.mockRestore();
   });
 });
 
