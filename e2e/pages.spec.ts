@@ -146,3 +146,108 @@ test.describe("pages", () => {
     }
   });
 });
+
+test.describe("HUD frame", () => {
+  test("header and footer frame the not-found page too", async ({ page }) => {
+    await page.goto("/does-not-exist");
+    await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
+    await expect(mainNav(page)).toBeVisible();
+    await expect(page.getByRole("contentinfo")).toBeVisible();
+    await expect(page.getByTestId("boost-meter")).toHaveCount(1);
+  });
+
+  test("skip link appears on focus and moves to the main content", async ({ page }) => {
+    await page.goto("/about");
+    await page.keyboard.press("Tab");
+    const skip = page.getByRole("link", { name: "Skip to content" });
+    await expect(skip).toBeFocused();
+    await expect(skip).toBeVisible();
+    const box = await skip.boundingBox();
+    expect(box && box.width > 1 && box.height > 1).toBe(true);
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/#main$/);
+  });
+
+  test("nav fits at 375 px and every destination is reachable by keyboard", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 700 });
+    await page.goto("/");
+    const nav = mainNav(page);
+    for (const label of ["Projects", "Experience", "About"]) {
+      const link = nav.getByRole("link", { name: label });
+      await expect(link).toBeInViewport({ ratio: 1 });
+      const box = await link.boundingBox();
+      expect(box!.height, label).toBeGreaterThanOrEqual(44);
+    }
+    // Skip link, home link, then the three destinations in order.
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    await expect(nav.getByRole("link").first()).toBeFocused();
+    for (const label of ["Projects", "Experience", "About"]) {
+      await page.keyboard.press("Tab");
+      await expect(nav.getByRole("link", { name: label })).toBeFocused();
+    }
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 1, name: "About" })).toBeVisible();
+  });
+
+  test("boost meter is decorative and fills from top to bottom of a long page", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 500 });
+    await page.goto("/about");
+    const meter = page.getByTestId("boost-meter");
+    await expect(meter).toHaveAttribute("aria-hidden", "true");
+    await expect(meter).toHaveCSS("position", "fixed");
+    await expect(meter).toHaveCSS("pointer-events", "none");
+
+    const scrollable = await page.evaluate(
+      () => document.documentElement.scrollHeight > document.documentElement.clientHeight + 100,
+    );
+    expect(scrollable).toBe(true);
+    await expect(meter).toHaveAttribute("data-progress", "0.000");
+
+    const mainTop = await page.locator("main").evaluate((el) => el.getBoundingClientRect().top);
+    await page.evaluate(() =>
+      window.scrollTo(0, (document.documentElement.scrollHeight - window.innerHeight) / 2),
+    );
+    await expect
+      .poll(async () => Number(await meter.getAttribute("data-progress")))
+      .toBeGreaterThan(0.3);
+    await expect
+      .poll(async () => Number(await meter.getAttribute("data-progress")))
+      .toBeLessThan(0.7);
+
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect(meter).toHaveAttribute("data-progress", "1.000");
+
+    // Fixed overlay: scrolling back to the top leaves the layout exactly where it was.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(meter).toHaveAttribute("data-progress", "0.000");
+    expect(await page.locator("main").evaluate((el) => el.getBoundingClientRect().top)).toBe(
+      mainTop,
+    );
+  });
+
+  test("boost meter eases when motion is allowed", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/about");
+    await expect(page.getByTestId("boost-meter-fill")).toHaveCSS("transition-duration", /^0\.15s/);
+  });
+
+  test("boost meter and nav links do not animate under reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/about");
+    const targets = [
+      page.getByTestId("boost-meter-fill"),
+      mainNav(page).getByRole("link", { name: "Projects" }),
+      page.getByRole("contentinfo").getByRole("link").first(),
+    ];
+    for (const target of targets) {
+      const { property, duration } = await target.evaluate((el) => {
+        const style = getComputedStyle(el);
+        return { property: style.transitionProperty, duration: style.transitionDuration };
+      });
+      expect(property === "none" || /^(0s|1e-05s|0\.00001s)/.test(duration)).toBe(true);
+    }
+  });
+});
