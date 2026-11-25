@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `DESIGN.md` design brief (responsive, games/tech feel, black and blue with neon highlights, motion) and the mochkai logo at `public/images/logo.svg`.
 - Global error page: a last-resort "Something went wrong" page with a retry button for failures in the root layout.
 
 ### Changed
