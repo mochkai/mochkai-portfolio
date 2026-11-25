@@ -6,7 +6,7 @@ Repository: https://github.com/mochkai/mochkai-portfolio
 
 ## Prerequisites
 
-- Node.js 22 or newer
+- Node.js 24 (24.22.3, pinned in `.node-version` and `.nvmrc`). fnm reads either file (switching automatically on `cd` needs fnm's `--use-on-cd` shell setup); nvm users run `nvm use`, which reads `.nvmrc`.
 - npm (this project is npm-only; use the committed `package-lock.json`)
 - Optional: Docker with Compose 2.24 or newer. On WSL, turn on Docker Desktop's WSL integration.
 
@@ -32,7 +32,7 @@ npm run docker:down   # stop and remove both
 - The dev service (`web`) runs `next dev` as the `node` user, with the source bind-mounted. File watching uses polling so it works across the WSL/Windows boundary.
 - `docker:dev` passes `--renew-anon-volumes` so the container's `node_modules` and `.next` volumes are recreated from the freshly built image, which makes new dependencies show up after `package.json` changes.
 - The prod service builds `Dockerfile` (multi-stage, standalone server, non-root user, `/api/health` healthcheck) and maps container port 3000 to host port 3001.
-- Both Dockerfiles pin the base image to `node:22.23.5-alpine3.24`. Bump both `FROM` lines together.
+- Both Dockerfiles pin the base image to `node:24.22.3-alpine3.24`. When upgrading Node, bump these together: `.node-version`, `.nvmrc`, `engines` in `package.json`, the `@types/node` major, the `FROM` lines in `Dockerfile` (both) and `Dockerfile.dev`, the pin comment in `Dockerfile`, and this line.
 - Build-time variables: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_CHATBOT_URL` and `DATA_SOURCE` are passed as build args, so changing them requires a rebuild (`docker:prod` already uses `--build`). Runtime variables: `CORS_ALLOWED_ORIGINS`, `CONTENT_API_URL` and `CONTENT_API_TOKEN`, read from `.env` when the container starts.
 
 ## Scripts
@@ -145,5 +145,5 @@ Remember that `NEXT_PUBLIC_*` variables and `DATA_SOURCE` are baked in at build 
 ## Contributing
 
 - Work on a feature branch; changes are reviewed and merged into `master` through pull requests.
-- Before opening a PR, run `npm run lint`, `npm run typecheck`, `npm test` and `npm run build`.
+- Before opening a PR, run `npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check` and `npm run build`, plus `npm run test:e2e` for UI or route changes.
 - Update `changelog.md` with every change.

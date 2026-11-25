@@ -13,10 +13,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- `DESIGN.md` now also documents the development conventions: stack, quality gates, testing, configuration, Docker, workflow and open questions for the owner.
+- `DESIGN.md` now also documents the development conventions: stack, quality gates, testing, configuration, Docker and workflow. It also records the owner's decisions on reduced motion, the dark color tokens and the Node version.
 - Invalid server configuration stops the production server (`npm start`, `docker:prod`) at startup with exit code 1 and logs each problem, instead of answering every request with an error. `next dev` (`npm run dev`, `docker:dev`) logs them and keeps running, showing the error on each request.
 - `NODE_ENV` is no longer validated as part of the server configuration.
-- Docker base images are pinned to `node:22.23.5-alpine3.24`.
+- Node.js 24 everywhere: `.node-version` and `.nvmrc` (24.22.3), `engines` `>=24 <25`, Docker images `node:24.22.3-alpine3.24`, `@types/node` 24.
+- The README's "before opening a PR" checklist now also lists `npm run format:check` and `npm run test:e2e` (for UI or route changes), matching the quality gates in `DESIGN.md`.
 - Hero and project images use `loading="eager"` and `fetchPriority="high"` instead of the deprecated `priority` prop.
 
 ### Fixed
