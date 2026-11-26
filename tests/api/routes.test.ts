@@ -73,6 +73,23 @@ describe("GET /api/profile", () => {
     expect(res.headers.get("content-type")).toMatch(/application\/json/);
     expect(await res.json()).toEqual(profileData);
   });
+
+  it("returns skills as ranked { name, rank } items", async () => {
+    const { profile } = await loadRoutes();
+    const body = (await (await profile.GET(req("/api/profile"))).json()) as {
+      skills: { category: string; items: unknown[] }[];
+    };
+    expect(body.skills.length).toBeGreaterThan(0);
+    for (const group of body.skills) {
+      expect(group.items.length).toBeGreaterThan(0);
+      for (const item of group.items) {
+        expect(item).toEqual({
+          name: expect.any(String),
+          rank: expect.stringMatching(/^(mastered|proficient|learning)$/),
+        });
+      }
+    }
+  });
 });
 
 describe("GET /api/experience", () => {

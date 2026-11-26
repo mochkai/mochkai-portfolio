@@ -6,14 +6,88 @@
   "avatar": "/images/avatar.svg",
   "email": "you@example.com",
   "socials": [
-    { "label": "GitHub", "url": "https://github.com/your-handle" },
-    { "label": "LinkedIn", "url": "https://www.linkedin.com/in/your-handle" }
+    {
+      "label": "GitHub",
+      "url": "https://github.com/your-handle"
+    },
+    {
+      "label": "LinkedIn",
+      "url": "https://www.linkedin.com/in/your-handle"
+    }
   ],
   "skills": [
-    { "category": "Languages", "items": ["TypeScript", "Python", "SQL"] },
-    { "category": "Frontend", "items": ["React", "Next.js", "Tailwind CSS"] },
-    { "category": "Backend", "items": ["Node.js", "REST APIs", "PostgreSQL"] },
-    { "category": "Tooling", "items": ["Docker", "Git", "Vitest", "Playwright"] }
+    {
+      "category": "Languages",
+      "items": [
+        {
+          "name": "TypeScript",
+          "rank": "mastered"
+        },
+        {
+          "name": "Python",
+          "rank": "proficient"
+        },
+        {
+          "name": "SQL",
+          "rank": "proficient"
+        }
+      ]
+    },
+    {
+      "category": "Frontend",
+      "items": [
+        {
+          "name": "React",
+          "rank": "mastered"
+        },
+        {
+          "name": "Next.js",
+          "rank": "mastered"
+        },
+        {
+          "name": "Tailwind CSS",
+          "rank": "proficient"
+        }
+      ]
+    },
+    {
+      "category": "Backend",
+      "items": [
+        {
+          "name": "Node.js",
+          "rank": "proficient"
+        },
+        {
+          "name": "REST APIs",
+          "rank": "mastered"
+        },
+        {
+          "name": "PostgreSQL",
+          "rank": "proficient"
+        }
+      ]
+    },
+    {
+      "category": "Tooling",
+      "items": [
+        {
+          "name": "Docker",
+          "rank": "proficient"
+        },
+        {
+          "name": "Git",
+          "rank": "mastered"
+        },
+        {
+          "name": "Vitest",
+          "rank": "proficient"
+        },
+        {
+          "name": "Playwright",
+          "rank": "learning"
+        }
+      ]
+    }
   ],
   "characterClass": "Full-stack · Backend main",
   "currentlyLearning": ["LangGraph"]

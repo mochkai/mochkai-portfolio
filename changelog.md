@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- About page as a character sheet (#9): two columns from 1024 px, stacked below. The sidebar holds the identity panel (portrait, name, title, `Class · …` and `Region · …` HUD labels, and the character stats from the new `getAboutStats` in `src/lib/stats.ts`: Quests completed, Skills unlocked, Guilds joined (distinct companies), Class and Currently learning, all computed from the content data, none date-derived) and the restyled "Get in touch" links. The main column shows the bio as "Backstory" and the skill tree (`SkillTree`): one panel per category on a dashed rune line, each skill with its owner-set rank as 3 pips (`SkillRankPips`, decorative, lit pips larger and solid, unlit ones hollow) plus a text label (Mastered / Proficient / Learning), and "Used in N quests" linking to `/projects?tech=<name>` (plain "No quests yet" for 0). Lit pips power on with a short staggered unlock (no movement), applied only under `motion-safe:`. No percentage bars, numeric levels or years-per-skill.
+- `src/lib/skills.ts`: rank helpers (`RANK_PIPS`, `rankLabel`), `projectUsesTech`, `filterProjectsByTech`, `countProjectsUsingSkill`, `getSkillUsage`, `questUsageLabel`, `techFilterHref` and `parseTechParam`. Skills match project `tech` case-insensitively after trimming (`toNameKey` in the new leaf module `src/lib/names.ts`, shared with the stats and the profile schema). Theme helper `animate-pip-unlock` in `globals.css`.
+- `/projects?tech=<name>` (#9) lists only the projects using that technology under a "Quests using <name>" heading (spelled as in the project data) with a "Show all quests" link; an unknown or empty value shows the "No matching quests" empty state (the raw query text is never echoed), and a repeated `tech` param uses its first occurrence. `searchParams` is read inside a Suspense boundary so the page header stays in the static shell. `/projects` without the parameter is unchanged.
+
 - Experience as a quest log (#8): `/experience` keeps its newest-first `<ol>`, now drawn on a glowing rune line with a node per role (filled for an ongoing role) and a `Quest log` page label. Each role is a native `<details>` chapter (no JavaScript needed; Enter or Space on the summary toggles it): the summary shows a `Chapter 01`-style label numbered from the newest role, a `Current` tag for an ongoing role, the role and company, and the location; the body shows the highlights and technology `Tag`s and stays in the DOM while collapsed. The latest chapter starts open. Opening plays a short fade-and-settle reveal (`animate-chapter-reveal`) and turns the chevron marker; both are off under reduced motion. The empty state is unchanged.
 - `toPublicExperience` in `src/lib/experience.ts`: the one redaction helper for experience output, used by the Experience page and `/api/experience`. It keeps the order, keeps `startDate`/`endDate` only for roles at the `DATED_COMPANY_LIMIT` most recent distinct companies (trimmed exact match, several roles at one company count once) and omits both keys from every other entry; every entry gets a date-free `current` flag. `DATED_COMPANY_LIMIT` is `0`, so no experience dates are shown or returned anywhere for now; the owner can date recent roles again by changing only that constant. No other output (metadata, JSON-LD, sitemap, feeds) contains experience data.
 - `useMediaQuery` hook in `src/lib/hooks/use-media-query.ts` (#7, missing from the #7 entry): whether a media query matches, live, with a calm server value so effects never flash on before hydration. `TiltCard` uses it to tilt only for a fine, hovering pointer.
@@ -28,6 +32,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Skills in `profile.json` (#9) are ranked `{ "name", "rank" }` objects instead of strings, with `rank` one of `mastered`, `proficient` or `learning` (placeholder ranks for now). `profileSchema` rejects an unknown rank, a blank skill name, a blank or empty category name, a category with no skills and duplicate skill names across the whole list (case-insensitive, trimmed; the error names the skill). **Breaking:** `/api/profile` returns the new `skills` item shape.
+- `DESIGN.md`: the `accent` token row no longer lists timeline markers, and the project structure lists `src/lib/skills.ts`.
+
 - `/api/experience` (#8) returns redacted entries: no `startDate`/`endDate` keys (with `DATED_COMPANY_LIMIT = 0`), plus a `current` boolean.
 
 - `DESIGN.md` Motion (#7): "no 3D" now means no 3D scenes, models or WebGL. The only perspective effect allowed is the subtle hover tilt on project cards (at most 6 degrees, fine pointer only, off under reduced motion).
@@ -47,6 +54,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Hero and project images use `loading="eager"` and `fetchPriority="high"` instead of the deprecated `priority` prop.
 
 ### Fixed
+
+- The `animate-chapter-reveal` comment in `globals.css` said the reveal was turned off with `motion-reduce:`; it is applied only under `motion-safe:`.
 
 - Unknown `/projects/<slug>` URLs return a real HTTP 404 with the not-found page (previously HTTP 200).
 - An API error response still returns the JSON 500 body when the CORS headers cannot be built, for example because `CORS_ALLOWED_ORIGINS` is invalid.

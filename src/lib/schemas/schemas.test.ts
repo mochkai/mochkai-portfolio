@@ -172,6 +172,77 @@ describe("profileSchema", () => {
     ).toBe(false);
   });
 
+  it("accepts the ranked skill shape with every rank", () => {
+    const skills = [
+      {
+        category: "Frontend",
+        items: [
+          { name: "React", rank: "mastered" as const },
+          { name: "CSS", rank: "proficient" as const },
+        ],
+      },
+      { category: "AI", items: [{ name: "LangGraph", rank: "learning" as const }] },
+    ];
+    expect(profileSchema.parse(makeProfile({ skills })).skills).toEqual(skills);
+  });
+
+  it("rejects an empty or whitespace-only category name", () => {
+    const withCategory = (category: string) =>
+      profileSchema.safeParse(
+        makeProfile({ skills: [{ category, items: [{ name: "React", rank: "mastered" }] }] }),
+      );
+    expect(withCategory("").success).toBe(false);
+    const blank = withCategory("   ");
+    expect(blank.success).toBe(false);
+    expect(blank.error?.issues.map((issue) => issue.message)).toContain(
+      "Skill category must not be empty",
+    );
+    expect(withCategory(" Frontend ").success).toBe(true);
+  });
+
+  it("rejects an unknown rank, an empty name, a string item and an empty category", () => {
+    const withItems = (items: unknown[]) =>
+      profileSchema.safeParse({ ...makeProfile(), skills: [{ category: "Frontend", items }] })
+        .success;
+    expect(withItems([{ name: "React", rank: "expert" }])).toBe(false);
+    expect(withItems([{ name: "React", rank: "Mastered" }])).toBe(false);
+    expect(withItems([{ name: "", rank: "mastered" }])).toBe(false);
+    expect(withItems([{ name: "   ", rank: "mastered" }])).toBe(false);
+    expect(withItems([{ name: "React" }])).toBe(false);
+    expect(withItems(["React"])).toBe(false);
+    expect(withItems([])).toBe(false);
+  });
+
+  it("rejects duplicate skill names across categories, case-insensitively after trimming", () => {
+    const result = profileSchema.safeParse(
+      makeProfile({
+        skills: [
+          { category: "Frontend", items: [{ name: "React", rank: "mastered" }] },
+          { category: "Other", items: [{ name: " react ", rank: "learning" }] },
+        ],
+      }),
+    );
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.message)).toContain(
+      'Duplicate skill name " react "',
+    );
+    expect(
+      profileSchema.safeParse(
+        makeProfile({
+          skills: [
+            {
+              category: "Frontend",
+              items: [
+                { name: "React", rank: "mastered" },
+                { name: "React", rank: "learning" },
+              ],
+            },
+          ],
+        }),
+      ).success,
+    ).toBe(false);
+  });
+
   it("parses a profile with or without characterClass and currentlyLearning", () => {
     const full = makeProfile({ currentlyLearning: ["LangGraph", "Rust"] });
     expect(profileSchema.parse(full)).toEqual(full);

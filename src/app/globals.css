@@ -70,9 +70,17 @@
 
   /*
    * Experience quest log. animate-chapter-reveal: an opened chapter's body fades in and settles
-   * 4 px into place (200 ms, once per open). Off under reduced motion (motion-reduce:).
+   * 4 px into place (200 ms, once per open). Applied only under motion-safe:, so it never runs
+   * under reduced motion.
    */
   --animate-chapter-reveal: chapter-reveal 200ms ease-out;
+
+  /*
+   * About skill tree. animate-pip-unlock: a lit rank pip powers on from dim to its glow (no
+   * movement, 400 ms, once on load, staggered with an inline animation-delay). It starts dimmed,
+   * never invisible. Applied only under motion-safe:, so it never runs under reduced motion.
+   */
+  --animate-pip-unlock: pip-unlock 400ms ease-out backwards;
 
   @keyframes boot {
     0% {
@@ -109,6 +117,17 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes pip-unlock {
+    from {
+      opacity: 0.3;
+      filter: brightness(0.6);
+    }
+    to {
+      opacity: 1;
+      filter: brightness(1);
     }
   }
 
