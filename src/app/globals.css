@@ -99,6 +99,16 @@
   --animate-shard-collect: shard-collect 700ms ease-out;
   --animate-achievement-in: achievement-in 300ms ease-out;
 
+  /*
+   * Easter eggs (#13). animate-overdrive-surge: during overdrive the boost meter's glow surges
+   * and settles four times (filter and box-shadow only, no movement, 0.9 s x 4, under the 4 s
+   * effect). animate-egg-toast-in: the Easter egg toast fades in with a glow (same frames as
+   * achievement-in). Both are applied only under motion-safe:, so neither runs under reduced
+   * motion; the static brighter colors stay.
+   */
+  --animate-overdrive-surge: overdrive-surge 0.9s ease-in-out 4;
+  --animate-egg-toast-in: achievement-in 300ms ease-out;
+
   @keyframes boot {
     0% {
       opacity: 0.35;
@@ -183,6 +193,18 @@
       box-shadow:
         inset 0 0 30px rgb(57 168 255 / 0.06),
         0 0 16px rgb(57 168 255 / 0.45);
+    }
+  }
+
+  @keyframes overdrive-surge {
+    0%,
+    100% {
+      filter: brightness(1.5);
+      box-shadow: 0 0 28px rgb(57 168 255 / 0.55);
+    }
+    50% {
+      filter: brightness(2);
+      box-shadow: 0 0 40px rgb(124 199 255 / 0.85);
     }
   }
 

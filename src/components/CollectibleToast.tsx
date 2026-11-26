@@ -1,6 +1,6 @@
 "use client";
 
-import { type RefObject, useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { CollectibleRune } from "@/components/CollectibleRune";
 import { Button } from "@/components/ui/Button";
 import { CARD_PANEL } from "@/components/ui/Card";
@@ -8,25 +8,7 @@ import { Label } from "@/components/ui/Label";
 import { progressStore } from "@/lib/collectible-progress";
 import { COLLECTIBLE_COUNT } from "@/lib/collectibles";
 import { useCollectibleProgress } from "@/lib/hooks/use-collectible-progress";
-
-/**
- * Runs `action` (which hides the toast), then, if focus was inside the toast, moves it back to
- * `returnFocus` so it is not dropped to the document body.
- *
- * @param toast - The toast element.
- * @param returnFocus - Where focus was when the toast opened.
- * @param action - Hides the toast (dismiss or reset).
- */
-function closeToast(
-  toast: RefObject<HTMLElement | null>,
-  returnFocus: RefObject<HTMLElement | null>,
-  action: () => void,
-) {
-  const hadFocus = toast.current?.contains(document.activeElement) ?? false;
-  action();
-  const target = returnFocus.current;
-  if (hadFocus && target?.isConnected) target.focus();
-}
+import { closeToast } from "@/lib/toast-focus";
 
 /**
  * Site-wide collectible feedback, rendered once in the root layout (outside the header, whose

@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FIELD_OPACITY } from "@/lib/arcane-field";
 import { FINE_POINTER_QUERY } from "@/lib/hooks/use-media-query";
+import { overdriveStore } from "@/lib/overdrive";
 import { ArcaneBackground } from "./ArcaneBackground";
 
 /** Stubs `matchMedia` for the reduced-motion and fine-pointer queries. */
@@ -87,6 +88,34 @@ describe("ArcaneBackground", () => {
     render(<ArcaneBackground />);
     expect(screen.getByTestId("arcane-canvas")).toHaveAttribute("data-animating", "true");
     expect(frames.length).toBeGreaterThan(0);
+  });
+
+  it("overdrive under reduced motion repaints one brighter static frame, with no loop", () => {
+    mockMedia({ reducedMotion: true, finePointer: true });
+    const ctx = stubCanvas();
+    const alphas: number[] = [];
+    Object.defineProperty(ctx, "globalAlpha", {
+      get: () => alphas.at(-1) ?? 1,
+      set: (value: number) => alphas.push(value),
+    });
+    render(<ArcaneBackground />);
+    const canvas = screen.getByTestId("arcane-canvas");
+    expect(canvas).toHaveAttribute("data-overdrive", "false");
+    const calmTraceAlpha = alphas[0];
+
+    act(() => overdriveStore.engage());
+    try {
+      expect(canvas).toHaveAttribute("data-overdrive", "true");
+      expect(ctx.clearRect).toHaveBeenCalledTimes(2);
+      expect(frames).toHaveLength(0);
+      expect(canvas).toHaveAttribute("data-animating", "false");
+      // The second frame's traces are brighter than the first's.
+      const surgeTraceAlpha = alphas[alphas.lastIndexOf(1, alphas.length - 2) + 1];
+      expect(surgeTraceAlpha).toBeGreaterThan(calmTraceAlpha);
+    } finally {
+      act(() => overdriveStore.stop());
+    }
+    expect(canvas).toHaveAttribute("data-overdrive", "false");
   });
 
   it("renders nothing broken when the canvas has no 2D context", () => {

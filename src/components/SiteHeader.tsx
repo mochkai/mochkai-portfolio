@@ -23,9 +23,10 @@ export interface SiteHeaderProps {
 /**
  * Site-wide HUD bar: the logo and owner's name as the home link, the rune shard counter (only
  * once a hidden collectible has been found, see {@link CollectibleCounter}) and the primary
- * navigation as world-map destinations. A slate panel with a rune-line bottom edge; sticky from
- * `sm` up so the HUD stays on screen, and in normal flow on phones (where it takes two rows) to
- * keep the reading area free.
+ * navigation as world-map destinations. The home link is marked `data-easter-egg="logo"` for
+ * the rapid-click Easter egg in `EasterEggs` (clicks are only counted). A slate panel with a
+ * rune-line bottom edge; sticky from `sm` up so the HUD stays on screen, and in normal flow on
+ * phones (where it takes two rows) to keep the reading area free.
  */
 export function SiteHeader({ name }: SiteHeaderProps) {
   return (
@@ -37,6 +38,7 @@ export function SiteHeader({ name }: SiteHeaderProps) {
         <div className="flex min-w-0 items-center gap-3">
           <Link
             href="/"
+            data-easter-egg="logo"
             className="group flex min-h-11 min-w-0 items-center gap-3 rounded-sm font-display text-lg font-semibold tracking-tight text-foreground hover:text-shadow-glow-sm motion-safe:transition-[text-shadow] motion-safe:duration-150 motion-safe:ease-out motion-reduce:transition-none"
           >
             <Image
