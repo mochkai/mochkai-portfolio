@@ -403,7 +403,91 @@ test.describe("pages", () => {
     await page.goto("/about");
     await expect(page.getByRole("heading", { level: 1, name: "About" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Skills" })).toBeVisible();
-    await expect(page.getByRole("heading", { level: 2, name: "Get in touch" })).toBeVisible();
+    const contact = page.getByRole("region", { name: "Join the party" });
+    await expect(contact.getByRole("heading", { level: 2, name: "Join the party" })).toBeVisible();
+    const profile: { email?: string; socials: { label: string; url: string }[] } = await (
+      await page.request.get("/api/profile")
+    ).json();
+    if (profile.email) {
+      await expect(contact.getByRole("link", { name: "Email me" })).toHaveAttribute(
+        "href",
+        `mailto:${profile.email}`,
+      );
+    }
+    for (const social of profile.socials) {
+      const link = contact.getByRole("link", { name: new RegExp(`^${social.label}\\b`) });
+      await expect(link).toHaveAttribute("href", social.url);
+      await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    }
+  });
+
+  test("home ends with the Join the party band", async ({ page }) => {
+    await page.goto("/");
+    const band = page.getByRole("region", { name: "Join the party" });
+    await band.scrollIntoViewIfNeeded();
+    await expect(band.getByRole("heading", { level: 2, name: "Join the party" })).toBeVisible();
+    await expect(band.getByRole("link", { name: "Email me" })).toHaveAttribute("href", /^mailto:/);
+  });
+
+  for (const path of ["/", "/projects", "/experience", "/about"]) {
+    test(`nav Contact on ${path} scrolls to the contact section below the header`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1280, height: 700 });
+      await page.goto(path);
+      await mainNav(page).getByRole("link", { name: "Contact" }).click();
+      await expect(page).toHaveURL(/\/about#contact$/);
+      // Role queries skip the hidden previous page that Next keeps mounted (the Home band also
+      // has id="contact"), so this is the visible About section.
+      const section = page.getByRole("region", { name: "Join the party" });
+      await expect(section).toBeInViewport();
+      const headerBottom = await page
+        .getByRole("banner")
+        .evaluate((el) => el.getBoundingClientRect().bottom);
+      await expect
+        .poll(() =>
+          section
+            .getByRole("heading", { name: "Join the party" })
+            .evaluate((el) => el.getBoundingClientRect().top),
+        )
+        .toBeGreaterThanOrEqual(headerBottom);
+      // About stays the one current item; Contact is never marked current.
+      await expect(mainNav(page).locator('[aria-current="page"]')).toHaveCount(1);
+      await expect(mainNav(page).getByRole("link", { name: "About" })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+    });
+  }
+
+  test("copy email confirms through the live region", async ({ page, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/about");
+    const contact = page.getByRole("region", { name: "Join the party" });
+    await contact.getByRole("button", { name: "Copy email" }).click();
+    await expect(contact.getByRole("status")).toHaveText("Copied");
+  });
+
+  test("email CTA pulses on hover only when motion is allowed", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/about");
+    const cta = page.getByRole("region", { name: "Join the party" }).getByRole("link", {
+      name: "Email me",
+    });
+    await cta.hover();
+    await expect(cta).toHaveCSS("animation-name", "party-pulse");
+  });
+
+  test("email CTA does not animate under reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/about");
+    const cta = page.getByRole("region", { name: "Join the party" }).getByRole("link", {
+      name: "Email me",
+    });
+    await cta.hover();
+    await expect(cta).toHaveCSS("animation-name", "none");
+    await cta.focus();
+    await expect(cta).toHaveCSS("animation-name", "none");
   });
 
   for (const width of [375, 768, 1280]) {
@@ -554,22 +638,29 @@ test.describe("HUD frame", () => {
     await page.setViewportSize({ width: 375, height: 700 });
     await page.goto("/");
     const nav = mainNav(page);
-    for (const label of ["Projects", "Experience", "About"]) {
+    const tops = new Set<number>();
+    for (const label of ["Projects", "Experience", "About", "Contact"]) {
       const link = nav.getByRole("link", { name: label });
       await expect(link).toBeInViewport({ ratio: 1 });
       const box = await link.boundingBox();
       expect(box!.height, label).toBeGreaterThanOrEqual(44);
+      // The label fits its target: nothing clipped.
+      expect(await link.evaluate((el) => el.scrollWidth <= el.clientWidth), label).toBe(true);
+      tops.add(Math.round(box!.y));
     }
-    // Skip link, home link, then the three destinations in order.
+    // All four destinations share one row.
+    expect(tops.size).toBe(1);
+    // Skip link, home link, then the four destinations in order.
     await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
     await expect(nav.getByRole("link").first()).toBeFocused();
-    for (const label of ["Projects", "Experience", "About"]) {
+    for (const label of ["Projects", "Experience", "About", "Contact"]) {
       await page.keyboard.press("Tab");
       await expect(nav.getByRole("link", { name: label })).toBeFocused();
     }
     await page.keyboard.press("Enter");
-    await expect(page.getByRole("heading", { level: 1, name: "About" })).toBeVisible();
+    await expect(page).toHaveURL(/\/about#contact$/);
+    await expect(page.getByRole("heading", { level: 2, name: "Join the party" })).toBeInViewport();
   });
 
   test("boost meter is decorative and fills from top to bottom of a long page", async ({

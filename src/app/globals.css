@@ -82,6 +82,13 @@
    */
   --animate-pip-unlock: pip-unlock 400ms ease-out backwards;
 
+  /*
+   * "Join the party" CTA. animate-party-pulse: while the email CTA is hovered or keyboard
+   * focused, its glow breathes (box-shadow only, no movement). Applied only under motion-safe:,
+   * so it never runs under reduced motion; the static hover glow stays.
+   */
+  --animate-party-pulse: party-pulse 1.6s ease-in-out infinite;
+
   @keyframes boot {
     0% {
       opacity: 0.35;
@@ -128,6 +135,16 @@
     to {
       opacity: 1;
       filter: brightness(1);
+    }
+  }
+
+  @keyframes party-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 28px rgb(57 168 255 / 0.55);
+    }
+    50% {
+      box-shadow: 0 0 40px rgb(57 168 255 / 0.75);
     }
   }
 

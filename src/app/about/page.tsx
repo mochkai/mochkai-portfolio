@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { JoinTheParty } from "@/components/JoinTheParty";
 import { PageHeader } from "@/components/PageHeader";
 import { SkillTree } from "@/components/SkillTree";
 import { Card } from "@/components/ui/Card";
@@ -25,9 +26,11 @@ const SECTION_HEADING = "mb-5 font-display text-2xl font-semibold tracking-tight
  *
  * - Sidebar: the identity panel (portrait, name, title, `Class` and `Region` HUD labels and the
  *   character stats from `getAboutStats`, the same tiles as the home scoreboard plus Guilds
- *   joined), then the contact links.
+ *   joined).
  * - Main column: the bio as "Backstory" and the skill tree, where each skill shows its owner-set
  *   rank and how many projects use it, linking to `/projects?tech=<name>`.
+ * - Full width at the end: the "Join the party" contact section (`#contact`, the nav "Contact"
+ *   destination).
  *
  * Every value comes from the content data. Nothing is date-derived: no years, no ages, no
  * percentages (DESIGN.md "Content and privacy").
@@ -101,39 +104,6 @@ export default async function AboutPage() {
               ))}
             </StatGrid>
           </Card>
-
-          <Card as="section" aria-labelledby="contact-heading" className="px-5 py-6 sm:px-6">
-            <h2
-              id="contact-heading"
-              className="mb-4 font-display text-xl font-semibold tracking-tight"
-            >
-              Get in touch
-            </h2>
-            <ul className="flex flex-col gap-2">
-              {profile.email && (
-                <li>
-                  <a
-                    href={`mailto:${profile.email}`}
-                    className="break-all text-accent underline-offset-4 hover:underline"
-                  >
-                    {profile.email}
-                  </a>
-                </li>
-              )}
-              {profile.socials.map((social) => (
-                <li key={social.url}>
-                  <a
-                    href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-accent underline-offset-4 hover:underline"
-                  >
-                    {social.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </Card>
         </div>
 
         <div className="flex min-w-0 flex-col gap-14">
@@ -152,6 +122,8 @@ export default async function AboutPage() {
           </section>
         </div>
       </div>
+
+      <JoinTheParty email={profile.email} socials={profile.socials} className="mt-16" />
     </>
   );
 }

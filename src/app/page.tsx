@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { JoinTheParty } from "@/components/JoinTheParty";
 import { ProjectList } from "@/components/ProjectList";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Card } from "@/components/ui/Card";
@@ -18,7 +19,8 @@ const LOGO_SRC = "/images/logo.svg";
  * Home page as a title screen: the logo powers on, a `Player 1` HUD label, the owner's name,
  * title and bio, a glowing "Press Start" CTA to the projects, secondary CTAs, and a scoreboard
  * computed from the content data. Featured projects follow below as completed-quest cards,
- * redacted with `toPublicProjects` so no project dates reach the page.
+ * redacted with `toPublicProjects` so no project dates reach the page, then the compact
+ * "Join the party" contact band.
  *
  * Every animation here is CSS only and starts from a visible state, so the hero is fully readable
  * without JavaScript and before the animations finish. Both are off under reduced motion.
@@ -116,6 +118,13 @@ export default async function HomePage() {
         </div>
         <ProjectList projects={toPublicProjects(featured)} headingLevel={3} />
       </section>
+
+      <JoinTheParty
+        email={profile.email}
+        socials={profile.socials}
+        variant="band"
+        className="mt-20"
+      />
     </>
   );
 }

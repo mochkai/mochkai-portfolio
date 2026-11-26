@@ -88,6 +88,27 @@ describe("HomePage", () => {
     );
   });
 
+  it("ends with the Join the party contact band", async () => {
+    render(await HomePage());
+    const band = screen.getByRole("region", { name: "Join the party" });
+    expect(band).toHaveAttribute("id", "contact-band");
+    expect(document.getElementById("contact")).toBeNull();
+    expect(within(band).getByRole("link", { name: "Email me" })).toHaveAttribute(
+      "href",
+      `mailto:${profileData.email}`,
+    );
+    for (const social of profileData.socials) {
+      expect(
+        within(band).getByRole("link", {
+          name: new RegExp(`^${social.label}\\b.*opens in a new tab`),
+        }),
+      ).toHaveAttribute("href", social.url);
+    }
+    // After the featured projects.
+    const featured = screen.getByRole("region", { name: "Featured projects" });
+    expect(featured.compareDocumentPosition(band) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("is a title screen: logo, Player 1 label, one h1, bio and CTAs", async () => {
     render(await HomePage());
     const hero = screen.getByRole("region", { name: profileData.name });
@@ -331,12 +352,18 @@ describe("AboutPage", () => {
     for (const group of profileData.skills) {
       expect(screen.getByRole("heading", { level: 3, name: group.category })).toBeInTheDocument();
     }
-    expect(screen.getByRole("link", { name: profileData.email })).toHaveAttribute(
+    const contact = screen.getByRole("region", { name: "Join the party" });
+    expect(contact).toHaveAttribute("id", "contact");
+    expect(within(contact).getByRole("link", { name: "Email me" })).toHaveAttribute(
       "href",
       `mailto:${profileData.email}`,
     );
     for (const social of profileData.socials) {
-      expect(screen.getByRole("link", { name: social.label })).toHaveAttribute("href", social.url);
+      expect(
+        within(contact).getByRole("link", {
+          name: new RegExp(`^${social.label}\\b.*opens in a new tab`),
+        }),
+      ).toHaveAttribute("href", social.url);
     }
   });
 
@@ -349,7 +376,7 @@ describe("AboutPage", () => {
         .getAllByRole("heading", { level: 2 })
         .map((h) => h.textContent)
         .sort(),
-    ).toEqual(["Backstory", "Get in touch", "Skills", profileData.name].sort());
+    ).toEqual(["Backstory", "Join the party", "Skills", profileData.name].sort());
     const identity = screen.getByRole("region", { name: profileData.name });
     expect(within(identity).getByRole("img")).toHaveAttribute(
       "alt",

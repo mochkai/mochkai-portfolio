@@ -187,11 +187,32 @@ describe("SiteHeader", () => {
       ["Projects", "/projects"],
       ["Experience", "/experience"],
       ["About", "/about"],
+      ["Contact", "/about#contact"],
     ]);
     expect(within(nav).getByRole("link", { name: "Experience" })).toHaveAttribute(
       "aria-current",
       "page",
     );
+  });
+
+  it("keeps About as the only current item on /about; Contact is never current", () => {
+    pathname.current = "/about";
+    render(<SiteHeader name="Ada Fixture" />);
+    const nav = screen.getByRole("navigation", { name: "Main" });
+    expect(within(nav).getByRole("link", { name: "About" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(within(nav).getByRole("link", { name: "Contact" })).not.toHaveAttribute("aria-current");
+    expect(nav.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
+  });
+
+  it("keeps every nav item on one row on phones (grid-flow-col, not a fixed column count)", () => {
+    render(<SiteHeader name="Ada Fixture" />);
+    const list = within(screen.getByRole("navigation", { name: "Main" })).getByRole("list");
+    expect(list).toHaveClass("grid-flow-col", "auto-cols-auto");
+    expect(list.className).not.toMatch(/(^|\s)grid-cols-/);
+    for (const link of within(list).getAllByRole("link")) expect(link).toHaveClass("min-h-11");
   });
 });
 
