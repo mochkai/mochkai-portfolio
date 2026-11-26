@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, type PointerEvent, type ReactNode } from "react";
 import { cx } from "@/lib/cx";
-import { useMediaQuery } from "@/lib/hooks/use-media-query";
+import { FINE_POINTER_QUERY, useMediaQuery } from "@/lib/hooks/use-media-query";
 import { usePrefersReducedMotion } from "@/lib/hooks/use-prefers-reduced-motion";
 
-/** Media query for devices with a mouse-like pointer that can hover. Tilt only runs there. */
-export const FINE_POINTER_QUERY = "(hover: hover) and (pointer: fine)";
+/** Re-exported so existing imports keep working; tilt only runs where it matches. */
+export { FINE_POINTER_QUERY };
 
 /** Largest tilt on either axis, in degrees. */
 export const MAX_TILT_DEGREES = 6;
@@ -131,7 +131,8 @@ export function TiltCard({ children, className }: TiltCardProps) {
       onPointerLeave={reset}
       onPointerCancel={reset}
       className={cx(
-        "h-full transition-transform duration-150 ease-out",
+        // Transitions only exist under motion-safe:; motion-reduce: also pins the transform flat.
+        "h-full motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out",
         "motion-reduce:transform-none! motion-reduce:transition-none",
         className,
       )}

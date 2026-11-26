@@ -41,10 +41,15 @@ describe("Button", () => {
 
   it("keeps hover effects short and turns them off under reduced motion", () => {
     render(<Button>Go</Button>);
-    expect(screen.getByRole("button", { name: "Go" })).toHaveClass(
-      "duration-150",
+    const button = screen.getByRole("button", { name: "Go" });
+    expect(button).toHaveClass(
+      "motion-safe:duration-150",
+      "motion-safe:active:translate-y-px",
       "motion-reduce:transition-none",
-      "motion-reduce:active:translate-y-0",
+    );
+    // Motion exists only under motion-safe:, never as a base class a motion-reduce: must beat.
+    expect(button.className).not.toMatch(
+      /(^|\s)(transition-(?!none)|duration-|ease-|animate-|active:translate)/,
     );
   });
 

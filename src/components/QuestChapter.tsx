@@ -83,7 +83,7 @@ export function QuestChapter({ entry, chapter, defaultOpen = false }: QuestChapt
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="mt-0.5 size-5 shrink-0 text-neon transition-transform duration-150 ease-out group-open:rotate-90 motion-reduce:transition-none"
+            className="mt-0.5 size-5 shrink-0 text-neon group-open:rotate-90 motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out motion-reduce:transition-none"
           >
             <path d="M9 6l6 6-6 6" />
           </svg>

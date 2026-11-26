@@ -160,7 +160,10 @@ describe("NavLinks", () => {
   it("turns link transitions off under reduced motion", () => {
     render(<NavLinks items={items} />);
     for (const link of screen.getAllByRole("link")) {
-      expect(link).toHaveClass("duration-150", "motion-reduce:transition-none");
+      expect(link).toHaveClass("motion-safe:duration-150", "motion-reduce:transition-none");
+      expect(link.className).not.toMatch(
+        /(^|\s)(transition-(?!none)|duration-|ease-|animate-|active:translate)/,
+      );
     }
   });
 
@@ -335,7 +338,7 @@ describe("BoostMeter", () => {
   it("eases the fill when motion is allowed", () => {
     stubReducedMotion(false);
     render(<BoostMeter />);
-    expect(screen.getByTestId("boost-meter-fill")).toHaveClass("transition-transform");
+    expect(screen.getByTestId("boost-meter-fill")).toHaveClass("motion-safe:transition-transform");
   });
 
   it("jumps without easing under reduced motion", () => {

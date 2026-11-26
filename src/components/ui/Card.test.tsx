@@ -46,9 +46,12 @@ describe("Card", () => {
     expect(card).toHaveClass(
       "hover:shadow-glow",
       "focus-within:shadow-glow",
-      "duration-150",
+      "motion-safe:duration-150",
       "motion-reduce:transition-none",
       "extra",
+    );
+    expect(card.className).not.toMatch(
+      /(^|\s)(transition-(?!none)|duration-|ease-|animate-|active:translate)/,
     );
   });
 });

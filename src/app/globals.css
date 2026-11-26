@@ -63,7 +63,8 @@
   /*
    * Home title screen. animate-boot: the logo flickers on and settles into its glow (1.1 s, once).
    * It starts dimmed, never invisible, so nothing waits on it. animate-cta-pulse: a slow, gentle
-   * glow pulse on the "Press Start" CTA. Both are off under reduced motion (motion-reduce:).
+   * glow pulse on the "Press Start" CTA. Both are applied only under motion-safe:, so neither
+   * runs under reduced motion.
    */
   --animate-boot: boot 1.1s ease-out backwards;
   --animate-cta-pulse: cta-pulse 3s ease-in-out 1.2s infinite;
@@ -192,8 +193,9 @@
 
 /*
  * Reduced-motion baseline: every transition and animation finishes instantly and smooth
- * scrolling is off. Components also add `motion-reduce:` utilities for transforms; JS-driven
- * effects use the `usePrefersReducedMotion` hook.
+ * scrolling is off. Components also put their animations and transitions under `motion-safe:`
+ * (never a base class that `motion-reduce:` must override); JS-driven effects (the backdrop,
+ * parallax, card tilt) use the `usePrefersReducedMotion` hook.
  */
 @media (prefers-reduced-motion: reduce) {
   *,

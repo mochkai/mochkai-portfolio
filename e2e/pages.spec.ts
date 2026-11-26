@@ -437,8 +437,8 @@ test.describe("pages", () => {
       await page.goto(path);
       await mainNav(page).getByRole("link", { name: "Contact" }).click();
       await expect(page).toHaveURL(/\/about#contact$/);
-      // Role queries skip the hidden previous page that Next keeps mounted (the Home band also
-      // has id="contact"), so this is the visible About section.
+      // Role queries skip the hidden previous page that Next keeps mounted (for example Home's
+      // own "Join the party" band, id="contact-band"), so this is the visible About section.
       const section = page.getByRole("region", { name: "Join the party" });
       await expect(section).toBeInViewport();
       const headerBottom = await page

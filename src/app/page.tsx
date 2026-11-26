@@ -1,12 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { JoinTheParty } from "@/components/JoinTheParty";
+import { ParallaxLayer } from "@/components/ParallaxLayer";
 import { ProjectList } from "@/components/ProjectList";
+import { RuneCircuit } from "@/components/RuneCircuit";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Card } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import { StatGrid } from "@/components/ui/StatGrid";
 import { StatTile } from "@/components/ui/StatTile";
+import { HERO_CIRCUIT_OPACITY } from "@/lib/arcane-field";
 import { getRepository } from "@/lib/data";
 import { isSvgImage } from "@/lib/images";
 import { toPublicProjects } from "@/lib/projects";
@@ -23,7 +26,9 @@ const LOGO_SRC = "/images/logo.svg";
  * "Join the party" contact band.
  *
  * Every animation here is CSS only and starts from a visible state, so the hero is fully readable
- * without JavaScript and before the animations finish. Both are off under reduced motion.
+ * without JavaScript and before the animations finish. Both exist only under `motion-safe:`, so
+ * nothing runs under reduced motion. Behind the hero text a faint rune circuit drifts with a
+ * gentle parallax ({@link ParallaxLayer}, off under reduced motion).
  */
 export default async function HomePage() {
   const repository = getRepository();
@@ -39,8 +44,12 @@ export default async function HomePage() {
       <Card
         as="section"
         aria-labelledby="intro-heading"
-        className="bg-radial-[at_15%_0%] from-accent-soft to-surface to-60% px-5 py-8 sm:px-10 sm:py-12"
+        className="overflow-hidden bg-radial-[at_15%_0%] from-accent-soft to-surface to-60% px-5 py-8 sm:px-10 sm:py-12"
       >
+        {/* Taller than the card by more than the parallax range, so no edge ever shows. */}
+        <ParallaxLayer className="absolute -inset-y-6 right-0 w-full sm:w-2/3">
+          <RuneCircuit opacity={HERO_CIRCUIT_OPACITY} className="size-full text-neon" />
+        </ParallaxLayer>
         <div className="relative grid gap-8 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-10">
           <Image
             src={LOGO_SRC}
@@ -51,7 +60,7 @@ export default async function HomePage() {
             loading="eager"
             fetchPriority="high"
             data-testid="hero-logo"
-            className="size-20 animate-boot drop-shadow-glow motion-reduce:animate-none sm:order-last sm:size-40 lg:size-56"
+            className="size-20 drop-shadow-glow motion-safe:animate-boot sm:order-last sm:size-40 lg:size-56"
           />
           <div className="min-w-0">
             <Label as="p" rune>
@@ -72,7 +81,7 @@ export default async function HomePage() {
                 href="/projects"
                 aria-label="Press Start: view projects"
                 data-testid="press-start"
-                className="animate-cta-pulse hover:animate-none motion-reduce:animate-none"
+                className="motion-safe:animate-cta-pulse motion-safe:hover:animate-none"
               >
                 <span aria-hidden="true" className="text-xs text-glow">
                   ▶
