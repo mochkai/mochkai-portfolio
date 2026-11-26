@@ -42,6 +42,74 @@ test.describe("pages", () => {
     );
   });
 
+  test("home is a title screen with a Press Start CTA, scoreboard and no dates", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const hero = page.getByRole("region", { name: await page.locator("h1").innerText() });
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+    await expect(hero.getByText(/^Player 1 · /)).toBeVisible();
+    await expect(hero.getByTestId("hero-logo")).toBeVisible();
+    await expect(hero.getByRole("link", { name: "Press Start: view projects" })).toHaveAttribute(
+      "href",
+      "/projects",
+    );
+    await expect(hero.getByRole("link", { name: "Read experience" })).toHaveAttribute(
+      "href",
+      "/experience",
+    );
+    await expect(hero.getByRole("link", { name: "About me" })).toHaveAttribute("href", "/about");
+    await expect(page.getByLabel("Player stats").getByRole("term")).toHaveText([
+      "Quests completed",
+      "Skills unlocked",
+      "Class",
+      /^Currently learning$/,
+    ]);
+    // No age signals or dates anywhere on the page (DESIGN.md "Content and privacy").
+    const text = await page.locator("main").innerText();
+    expect(text).not.toMatch(/\byears?\b|\bsince\b/i);
+    expect(text).not.toMatch(/\b(19|20)\d{2}\b/);
+    const description = await page.locator('meta[name="description"]').getAttribute("content");
+    expect(description ?? "").not.toMatch(/\byears?\b|\b(19|20)\d{2}\b/i);
+  });
+
+  for (const width of [375, 768, 1280]) {
+    test(`home hero fits at ${width} px without horizontal scrolling`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+      await expect(page.getByRole("link", { name: "Press Start: view projects" })).toBeInViewport();
+    });
+  }
+
+  test("home logo boots up and the CTA pulses when motion is allowed", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    await expect(page.getByTestId("hero-logo")).toHaveCSS("animation-name", "boot");
+    await expect(page.getByTestId("press-start")).toHaveCSS("animation-name", "cta-pulse");
+  });
+
+  test("home boot-up and pulse are off under reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await expect(page.getByTestId("hero-logo")).toHaveCSS("animation-name", "none");
+    await expect(page.getByTestId("press-start")).toHaveCSS("animation-name", "none");
+    await expect(page.getByTestId("hero-logo")).toHaveCSS("opacity", "1");
+  });
+
+  test("home hero is readable with JavaScript disabled", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Press Start: view projects" })).toBeVisible();
+    await expect(page.getByLabel("Player stats")).toBeVisible();
+    await context.close();
+  });
+
   test("projects list links to a detail page that shows its tech", async ({ page, request }) => {
     const [first]: { slug: string; title: string; tech: string[] }[] = await (
       await request.get("/api/projects")

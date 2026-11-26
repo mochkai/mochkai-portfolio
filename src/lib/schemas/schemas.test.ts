@@ -171,4 +171,26 @@ describe("profileSchema", () => {
       profileSchema.safeParse(makeProfile({ skills: [{ category: "Empty", items: [] }] })).success,
     ).toBe(false);
   });
+
+  it("parses a profile with or without characterClass and currentlyLearning", () => {
+    const full = makeProfile({ currentlyLearning: ["LangGraph", "Rust"] });
+    expect(profileSchema.parse(full)).toEqual(full);
+    const {
+      characterClass: _characterClass,
+      currentlyLearning: _currentlyLearning,
+      ...withoutStats
+    } = makeProfile();
+    void _characterClass;
+    void _currentlyLearning;
+    expect(profileSchema.parse(withoutStats)).toEqual(withoutStats);
+    expect(profileSchema.safeParse(makeProfile({ currentlyLearning: [] })).success).toBe(true);
+  });
+
+  it("rejects an empty characterClass or an empty currentlyLearning entry", () => {
+    expect(profileSchema.safeParse(makeProfile({ characterClass: "" })).success).toBe(false);
+    expect(profileSchema.safeParse(makeProfile({ currentlyLearning: [""] })).success).toBe(false);
+    expect(
+      profileSchema.safeParse(makeProfile({ currentlyLearning: ["LangGraph", ""] })).success,
+    ).toBe(false);
+  });
 });

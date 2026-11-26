@@ -24,6 +24,10 @@ export const profileSchema = z.object({
   email: z.email().optional(),
   socials: z.array(socialLinkSchema),
   skills: z.array(skillGroupSchema),
+  /** Scoreboard "Class", e.g. `Full-stack · Backend main`. Falls back to `title` when unset. */
+  characterClass: z.string().min(1).optional(),
+  /** Scoreboard "Currently learning", e.g. `["LangGraph"]`. The tile is hidden when unset. */
+  currentlyLearning: z.array(z.string().min(1)).optional(),
 });
 
 export type SocialLink = z.infer<typeof socialLinkSchema>;
