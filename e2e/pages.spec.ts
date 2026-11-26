@@ -406,6 +406,120 @@ test.describe("pages", () => {
     await expect(page.getByRole("heading", { level: 2, name: "Get in touch" })).toBeVisible();
   });
 
+  for (const width of [375, 768, 1280]) {
+    test(`about character sheet fits at ${width} px without horizontal scrolling`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/about");
+      await expect(page.getByTestId("identity-panel")).toBeVisible();
+      await expect(page.getByLabel("Character stats")).toBeVisible();
+      await expect(page.getByTestId("skill-category").first()).toBeVisible();
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+    });
+  }
+
+  for (const width of [768, 1280]) {
+    test(`about skill names never break mid-word at ${width} px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/about");
+      await expect(page.getByTestId("skill-name").first()).toBeVisible();
+      // For every word of every skill name, a Range over that word must cover a single line box.
+      const broken = await page.getByTestId("skill-name").evaluateAll((names) =>
+        names.flatMap((name) => {
+          const text = name.firstChild;
+          if (!(text instanceof Text)) return [`${name.textContent}: no text node`];
+          const value = text.data;
+          const failures: string[] = [];
+          for (const match of value.matchAll(/\S+/g)) {
+            const range = document.createRange();
+            range.setStart(text, match.index);
+            range.setEnd(text, match.index + match[0].length);
+            if (range.getClientRects().length !== 1) failures.push(`${value}: "${match[0]}"`);
+          }
+          return failures;
+        }),
+      );
+      expect(broken).toEqual([]);
+    });
+  }
+
+  test("about skill tree shows ranks as text and no progress bars", async ({ page }) => {
+    await page.goto("/about");
+    const skills = page.getByRole("region", { name: "Skills" });
+    await expect(skills.getByTestId("skill").first()).toContainText(
+      /, (Mastered|Proficient|Learning)/,
+    );
+    await expect(page.getByRole("progressbar")).toHaveCount(0);
+    await expect(page.locator("progress, meter")).toHaveCount(0);
+  });
+
+  test("a skill's quest link opens the filtered quest board", async ({ page, request }) => {
+    const projects: { title: string; tech: string[] }[] = await (
+      await request.get("/api/projects")
+    ).json();
+    await page.goto("/about");
+    const link = page
+      .getByRole("region", { name: "Skills" })
+      .getByRole("link", { name: /^Used in \d+ quests? \(/ })
+      .first();
+    const name = (await link.textContent())!.match(/\((.+)\)$/)![1];
+    const expected = projects
+      .filter((p) => p.tech.some((t) => t.trim().toLowerCase() === name.toLowerCase()))
+      .map((p) => p.title);
+    expect(expected.length).toBeGreaterThan(0);
+    await link.click();
+    await expect(page).toHaveURL(`/projects?tech=${encodeURIComponent(name)}`);
+    const filter = page.getByRole("region", { name: `Quests using ${name}` });
+    await expect(filter.getByRole("heading", { level: 3 })).toHaveText(expected);
+    await filter.getByRole("link", { name: "Show all quests" }).click();
+    await expect(page).toHaveURL(/\/projects$/);
+    await expect(page.getByTestId("project-card")).toHaveCount(projects.length);
+  });
+
+  test("an unknown ?tech value shows the empty state", async ({ page }) => {
+    const response = await page.goto("/projects?tech=does-not-exist");
+    expect(response?.status()).toBe(200);
+    await expect(page.getByRole("heading", { level: 2, name: "No matching quests" })).toBeVisible();
+    await expect(page.getByText("No quests use that technology yet.")).toBeVisible();
+    await expect(page.getByTestId("project-card")).toHaveCount(0);
+  });
+
+  test("skill pips unlock when motion is allowed", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/about");
+    await expect(page.locator('[data-testid="rank-pip"][data-lit="true"]').first()).toHaveCSS(
+      "animation-name",
+      "pip-unlock",
+    );
+  });
+
+  test("skill pip unlock is off under reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/about");
+    const lit = page.locator('[data-testid="rank-pip"][data-lit="true"]');
+    await expect(lit.first()).toHaveCSS("animation-name", "none");
+    await expect(lit.first()).toHaveCSS("opacity", "1");
+  });
+
+  test("skill quest links are keyboard reachable with a visible focus ring", async ({ page }) => {
+    await page.goto("/about");
+    const link = page
+      .getByRole("region", { name: "Skills" })
+      .getByRole("link", { name: /^Used in \d+ quests? \(/ })
+      .first();
+    // Tab through the page until the first skill link has focus.
+    for (let i = 0; i < 60 && !(await link.evaluate((el) => el === document.activeElement)); i++) {
+      await page.keyboard.press("Tab");
+    }
+    await expect(link).toBeFocused();
+    await expect(link).toHaveCSS("outline-style", "solid");
+    await expect(link).toHaveCSS("outline-width", "2px");
+  });
+
   test("navigating via the header reaches each section", async ({ page }) => {
     await page.goto("/");
     for (const label of ["Experience", "About", "Projects"]) {

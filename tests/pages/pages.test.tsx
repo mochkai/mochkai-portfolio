@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import AboutPage from "@/app/about/page";
 import ExperiencePage from "@/app/experience/page";
@@ -9,6 +9,7 @@ import experienceData from "@/data/experience.json";
 import profileData from "@/data/profile.json";
 import projectsData from "@/data/projects.json";
 import { formatDateRange, formatMonth } from "@/lib/format";
+import { RANK_PIPS, rankLabel } from "@/lib/skills";
 
 /**
  * Every way a project date from the content data could show up in markup: the raw `YYYY-MM`
@@ -40,6 +41,29 @@ vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
   usePathname: () => "/",
 }));
+
+/** Props for the projects page, with the given search params. */
+function projectsProps(search: Record<string, string | string[]> = {}) {
+  return { params: Promise.resolve({}), searchParams: Promise.resolve(search) } as Parameters<
+    typeof ProjectsPage
+  >[0];
+}
+
+/**
+ * Renders the projects page and waits for its Suspense-wrapped list (a promise child) to
+ * resolve; the awaited `act` lets React retry the suspended boundary.
+ */
+async function renderProjects(search: Record<string, string | string[]> = {}) {
+  const result = await act(async () => render(ProjectsPage(projectsProps(search))));
+  expect(screen.queryByText("Loading quests…")).not.toBeInTheDocument();
+  return result;
+}
+
+/** Projects whose `tech` contains `name`, compared case-insensitively after trimming. */
+function projectsUsing(name: string) {
+  const key = name.trim().toLowerCase();
+  return projectsData.filter((p) => p.tech.some((t) => t.trim().toLowerCase() === key));
+}
 
 /** `params` prop for the project detail page. */
 function slugProps(slug: string) {
@@ -137,7 +161,7 @@ describe("HomePage", () => {
 
 describe("ProjectsPage", () => {
   it("is a quest board of project cards, each linking to its detail page", async () => {
-    render(await ProjectsPage());
+    await renderProjects();
     expect(screen.getByRole("heading", { level: 1, name: "Projects" })).toBeInTheDocument();
     expect(screen.getByText("Quest board")).toHaveClass("font-mono");
     expect(screen.getAllByTestId("project-card")).toHaveLength(projectsData.length);
@@ -153,7 +177,56 @@ describe("ProjectsPage", () => {
   });
 
   it("renders no project dates", async () => {
-    const { container } = render(await ProjectsPage());
+    const { container } = await renderProjects();
+    expectNoProjectDates(container);
+  });
+
+  it("without ?tech shows every project and no filter bar", async () => {
+    await renderProjects();
+    expect(screen.queryByTestId("quest-filter")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Show all quests" })).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("project-card")).toHaveLength(projectsData.length);
+  });
+
+  it("?tech=<name> lists exactly the matching projects, case-insensitively", async () => {
+    const tech = projectsData[0].tech[0];
+    const expected = projectsUsing(tech);
+    await renderProjects({ tech: `  ${tech.toUpperCase()} ` });
+    const filter = screen.getByRole("region", { name: `Quests using ${tech}` });
+    const titles = within(filter)
+      .getAllByRole("heading", { level: 3 })
+      .map((h) => h.textContent);
+    expect(titles).toEqual(expected.map((p) => p.title));
+    expect(within(filter).getByRole("link", { name: "Show all quests" })).toHaveAttribute(
+      "href",
+      "/projects",
+    );
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  });
+
+  it.each([["Cobol <b>now</b>"], [""]])(
+    "shows the empty state for ?tech=%j without echoing it",
+    async (tech) => {
+      const { container } = await renderProjects({ tech });
+      expect(screen.getByRole("heading", { level: 2, name: "No matching quests" })).toBeVisible();
+      expect(screen.getByText("No quests use that technology yet.")).toBeInTheDocument();
+      expect(screen.queryAllByTestId("project-card")).toHaveLength(0);
+      expect(screen.getByRole("link", { name: "Show all quests" })).toHaveAttribute(
+        "href",
+        "/projects",
+      );
+      if (tech) expect(container.textContent).not.toContain("Cobol");
+    },
+  );
+
+  it("uses the first value of a repeated ?tech param", async () => {
+    const tech = projectsData[0].tech[0];
+    await renderProjects({ tech: [tech, "Unknown"] });
+    expect(screen.getByRole("heading", { level: 2, name: `Quests using ${tech}` })).toBeVisible();
+  });
+
+  it("renders no project dates when filtered", async () => {
+    const { container } = await renderProjects({ tech: projectsData[0].tech[0] });
     expectNoProjectDates(container);
   });
 });
@@ -256,7 +329,7 @@ describe("AboutPage", () => {
     render(await AboutPage());
     expect(screen.getByRole("heading", { level: 1, name: "About" })).toBeInTheDocument();
     for (const group of profileData.skills) {
-      expect(screen.getByText(group.category)).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 3, name: group.category })).toBeInTheDocument();
     }
     expect(screen.getByRole("link", { name: profileData.email })).toHaveAttribute(
       "href",
@@ -264,6 +337,115 @@ describe("AboutPage", () => {
     );
     for (const social of profileData.socials) {
       expect(screen.getByRole("link", { name: social.label })).toHaveAttribute("href", social.url);
+    }
+  });
+
+  it("is a character sheet: one h1, then identity, contact, backstory and skills", async () => {
+    render(await AboutPage());
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getByText("Character sheet")).toHaveClass("font-mono");
+    expect(
+      screen
+        .getAllByRole("heading", { level: 2 })
+        .map((h) => h.textContent)
+        .sort(),
+    ).toEqual(["Backstory", "Get in touch", "Skills", profileData.name].sort());
+    const identity = screen.getByRole("region", { name: profileData.name });
+    expect(within(identity).getByRole("img")).toHaveAttribute(
+      "alt",
+      `Portrait of ${profileData.name}`,
+    );
+    expect(within(identity).getByText(`Class · ${profileData.characterClass}`)).toHaveClass(
+      "font-mono",
+    );
+    expect(within(identity).getByText(`Region · ${profileData.location}`)).toBeInTheDocument();
+    const backstory = screen.getByRole("region", { name: "Backstory" });
+    expect(within(backstory).getByText(profileData.bio)).toBeInTheDocument();
+  });
+
+  it("shows the character stats computed from the content data", async () => {
+    render(await AboutPage());
+    const grid = screen.getByLabelText("Character stats");
+    const terms = within(grid)
+      .getAllByRole("term")
+      .map((t) => t.textContent);
+    const values = within(grid)
+      .getAllByRole("definition")
+      .map((d) => d.textContent);
+    const technologies = new Set(
+      projectsData.flatMap((p) => p.tech.map((t) => t.trim().toLowerCase())),
+    );
+    const companies = new Set(experienceData.map((e) => e.company.trim().toLowerCase()));
+    expect(terms).toEqual([
+      "Quests completed",
+      "Skills unlocked",
+      "Guilds joined",
+      "Class",
+      "Currently learning",
+    ]);
+    expect(values).toEqual([
+      String(projectsData.length),
+      String(technologies.size),
+      String(companies.size),
+      profileData.characterClass,
+      profileData.currentlyLearning.join(" · "),
+    ]);
+  });
+
+  it("shows every skill with its rank pips, rank text and quest usage", async () => {
+    render(await AboutPage());
+    const skills = screen.getByRole("region", { name: "Skills" });
+    for (const group of profileData.skills) {
+      const category = within(skills).getByRole("region", { name: group.category });
+      const items = within(category).getAllByRole("listitem");
+      expect(items).toHaveLength(group.items.length);
+      group.items.forEach((skill, index) => {
+        const item = items[index];
+        const rank = skill.rank as keyof typeof RANK_PIPS;
+        expect(item).toHaveTextContent(`${skill.name}, ${rankLabel(rank)}`);
+        const pips = within(item).getByTestId("rank-pips");
+        expect(pips).toHaveAttribute("aria-hidden", "true");
+        expect(pips.querySelectorAll('[data-lit="true"]')).toHaveLength(RANK_PIPS[rank]);
+        expect(pips.querySelectorAll("[data-lit]")).toHaveLength(3);
+        const count = projectsUsing(skill.name).length;
+        if (count > 0) {
+          const label = `Used in ${count} ${count === 1 ? "quest" : "quests"}`;
+          expect(
+            within(item).getByRole("link", { name: `${label} (${skill.name})` }),
+          ).toHaveAttribute("href", `/projects?tech=${encodeURIComponent(skill.name)}`);
+        } else {
+          expect(within(item).queryByRole("link")).not.toBeInTheDocument();
+          expect(within(item).getByText("No quests yet")).toBeInTheDocument();
+        }
+      });
+    }
+  });
+
+  it("has no percentage or progress bars", async () => {
+    const { container } = render(await AboutPage());
+    expect(screen.queryAllByRole("progressbar")).toHaveLength(0);
+    expect(screen.queryAllByRole("meter")).toHaveLength(0);
+    expect(container.querySelector("progress, meter")).toBeNull();
+    expect(container.textContent).not.toMatch(/\d\s*%/);
+  });
+
+  // DESIGN.md: no age signals and no dates anywhere.
+  it("shows no age signals and no dates", async () => {
+    const { container } = render(await AboutPage());
+    const text = container.textContent ?? "";
+    expect(text).not.toMatch(/\byears?\b|\bsince\b|\bpresent\b|\bage\b/i);
+    expect(text).not.toMatch(/\b(19|20)\d{2}\b/);
+    expect(text).not.toMatch(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w* \d/i);
+  });
+
+  it("runs the pip unlock animation only under motion-safe", async () => {
+    render(await AboutPage());
+    const pips = screen.getAllByTestId("rank-pip");
+    for (const pip of pips) {
+      const classes = [...pip.classList];
+      expect(classes).not.toContain("animate-pip-unlock");
+      if (pip.dataset.lit === "true") expect(classes).toContain("motion-safe:animate-pip-unlock");
+      else expect(classes.some((c) => c.includes("animate"))).toBe(false);
     }
   });
 });

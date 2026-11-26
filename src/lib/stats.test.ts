@@ -4,6 +4,7 @@ import { makeExperience, makeProfile, makeProject } from "../../tests/fixtures";
 import {
   countDistinctCompanies,
   countDistinctTechnologies,
+  getAboutStats,
   getCharacterClass,
   getCurrentlyLearning,
   getHomeStats,
@@ -96,6 +97,43 @@ describe("getHomeStats", () => {
 
   it("never produces a date-derived stat", () => {
     const stats = getHomeStats({ profile: makeProfile(), projects: [makeProject()] });
+    for (const stat of stats) {
+      expect(stat.label).not.toMatch(/year|since|age|experience/i);
+    }
+  });
+});
+
+describe("getAboutStats", () => {
+  it("adds Guilds joined (distinct companies) after Skills unlocked", () => {
+    const stats = getAboutStats({
+      profile: makeProfile({ characterClass: "Full-stack", currentlyLearning: ["A"] }),
+      projects: [makeProject({ tech: ["React"] })],
+      experience: [
+        makeExperience({ id: "a1", company: "Acme" }),
+        makeExperience({ id: "a2", company: "acme " }),
+        makeExperience({ id: "b", company: "Beta" }),
+      ],
+    });
+    expect(stats.map(({ label, value }) => [label, value])).toEqual([
+      ["Quests completed", 1],
+      ["Skills unlocked", 1],
+      ["Guilds joined", 2],
+      ["Class", "Full-stack"],
+      ["Currently learning", "A"],
+    ]);
+  });
+
+  it("matches the home stats when there is no experience", () => {
+    const input = { profile: bareProfile(), projects: [makeProject()] };
+    expect(getAboutStats({ ...input, experience: [] })).toEqual(getHomeStats(input));
+  });
+
+  it("never produces a date-derived stat", () => {
+    const stats = getAboutStats({
+      profile: makeProfile(),
+      projects: [makeProject()],
+      experience: [makeExperience()],
+    });
     for (const stat of stats) {
       expect(stat.label).not.toMatch(/year|since|age|experience/i);
     }

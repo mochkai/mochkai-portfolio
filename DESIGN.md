@@ -68,7 +68,7 @@ One dark scheme, no light mode and no theme toggle. `color-scheme: dark` is set 
 | `brand`             | `#0071bc`      | Logo blue. Fills, borders, glow sources and large text (24 px+, or 18.66 px+ bold) only. |
 | `neon`              | `#39a8ff`      | Links, HUD labels, focus ring, primary button border and glow source.                    |
 | `glow`              | `#7cc7ff`      | Glowing highlights: tag text, stat values, secondary button text.                        |
-| `accent`            | = `neon`       | Legacy name kept for existing components (links, solid buttons, timeline markers).       |
+| `accent`            | = `neon`       | Legacy name kept for existing components (links, solid buttons).                         |
 | `accent-foreground` | = `background` | Text on a solid `accent` fill.                                                           |
 | `accent-soft`       | `#0b2440`      | Tinted blue panel fill.                                                                  |
 
@@ -149,7 +149,7 @@ This Next.js version has breaking changes from what you may remember. Read the r
 - `src/lib/data/`: `PortfolioRepository` interface and the JSON implementation. Pages and routes call `getRepository()`, never read JSON directly.
 - `src/lib/config/`: validated environment (`server.ts` is `server-only`, `public.ts` is for `NEXT_PUBLIC_*`).
 - `src/lib/http/`: API helpers (JSON responses, CORS, error wrapper).
-- `src/lib/routing/`, `src/lib/images.ts`, `src/lib/format.ts`, `src/lib/cx.ts`, `src/lib/stats.ts`: shared helpers. `src/lib/projects.ts` and `src/lib/experience.ts`: the redaction helpers every project and experience output goes through. `src/lib/hooks/`: client hooks (`usePrefersReducedMotion`, `useMediaQuery`).
+- `src/lib/routing/`, `src/lib/images.ts`, `src/lib/format.ts`, `src/lib/cx.ts`, `src/lib/stats.ts`: shared helpers. `src/lib/projects.ts` and `src/lib/experience.ts`: the redaction helpers every project and experience output goes through. `src/lib/skills.ts`: skill ranks, "Used in N quests" counts and the `/projects?tech=` matching. `src/lib/hooks/`: client hooks (`usePrefersReducedMotion`, `useMediaQuery`).
 - `src/proxy.ts`: runs for `/projects/:slug` only and answers unknown slugs with a real 404.
 - `src/instrumentation.ts` and `src/instrumentation-node.ts`: validate server config at startup.
 - `public/`: static assets, including `public/images/`.
