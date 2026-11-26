@@ -2,10 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { NavLinks, type NavItem } from "./NavLinks";
 
+/**
+ * The primary destinations. "Contact" is the "Join the party" section at the end of the About
+ * page (`/about#contact`), so it works from every page; it is never marked as the current page.
+ */
 const NAV_ITEMS: readonly NavItem[] = [
   { href: "/projects", label: "Projects" },
   { href: "/experience", label: "Experience" },
   { href: "/about", label: "About" },
+  { href: "/about#contact", label: "Contact" },
 ];
 
 /** Props for {@link SiteHeader}. */

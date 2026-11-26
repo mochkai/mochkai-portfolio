@@ -15,8 +15,13 @@ export interface NavLinksProps {
   items: readonly NavItem[];
 }
 
-/** Returns true when `pathname` is `href` or a page nested under it. */
+/**
+ * Returns true when `pathname` is `href` or a page nested under it. A link to a section of a
+ * page (`/about#contact`) is never current: the page's own item (`/about`) already is, and only
+ * one item may carry `aria-current`.
+ */
 function isActive(pathname: string, href: string): boolean {
+  if (href.includes("#")) return false;
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -26,8 +31,10 @@ const TRANSITION =
 
 /**
  * Primary navigation as world-map destinations: each link has a rune node marker, joined to
- * the previous one by a dashed path from `sm` up. On phones the links share one row as three
- * equal columns with 44 px touch targets.
+ * the previous one by a dashed path from `sm` up. On phones the links share one row
+ * (`grid-flow-col`, so any number of items stays on one line; each column is as wide as its
+ * label plus an equal share of the spare width) with 44 px touch targets; the node markers are
+ * hidden there to make room, and the current page keeps its fill and underline bar.
  *
  * The current section (including nested pages such as `/projects/[slug]`) gets
  * `aria-current="page"`, a glow, and two non-color cues: a filled node marker and an
@@ -37,7 +44,7 @@ export function NavLinks({ items }: NavLinksProps) {
   const pathname = usePathname();
 
   return (
-    <ul className="grid w-full grid-cols-3 gap-1 text-sm sm:flex sm:w-auto sm:items-center sm:gap-0">
+    <ul className="grid w-full auto-cols-auto grid-flow-col gap-1 text-sm sm:flex sm:w-auto sm:items-center sm:gap-0">
       {items.map((item, index) => {
         const active = isActive(pathname, item.href);
         return (
@@ -52,7 +59,7 @@ export function NavLinks({ items }: NavLinksProps) {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cx(
-                "group relative flex min-h-11 w-full items-center justify-center gap-2 rounded-sm px-2 font-display font-medium sm:w-auto sm:px-3",
+                "group relative flex min-h-11 w-full items-center justify-center gap-2 rounded-sm px-1.5 font-display font-medium sm:w-auto sm:px-3",
                 TRANSITION,
                 active
                   ? "bg-accent-soft text-foreground text-shadow-glow-sm"
@@ -62,7 +69,7 @@ export function NavLinks({ items }: NavLinksProps) {
               <span
                 aria-hidden="true"
                 className={cx(
-                  "size-2 shrink-0 rotate-45 border",
+                  "size-2 shrink-0 rotate-45 border max-sm:hidden",
                   TRANSITION,
                   active
                     ? "border-neon bg-neon shadow-glow-sm"

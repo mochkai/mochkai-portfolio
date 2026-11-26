@@ -16,15 +16,15 @@ The colors come from the mochkai logo (`public/images/logo.svg`): blues `#0071bc
 
 ### Journey structure
 
-| Page       | Framing          |
-| ---------- | ---------------- |
-| Home       | Title screen     |
-| About      | Character sheet  |
-| Experience | Quest log        |
-| Projects   | Completed quests |
-| Contact    | "Join the party" |
+| Page       | Framing                                                                        |
+| ---------- | ------------------------------------------------------------------------------ |
+| Home       | Title screen                                                                   |
+| About      | Character sheet                                                                |
+| Experience | Quest log                                                                      |
+| Projects   | Completed quests                                                               |
+| Contact    | "Join the party" (`#contact` section at the end of About, plus a band on Home) |
 
-Navigation is a HUD-style bar. A thin scroll "boost meter" shows reading progress. The framing shows in labels and layout, not in renamed content: an Experience entry still says "Senior Developer, Company", not "Level 40 Wizard".
+Navigation is a HUD-style bar (Projects, Experience, About, Contact; Contact links to `/about#contact` and is never marked as the current page). A thin scroll "boost meter" shows reading progress. The framing shows in labels and layout, not in renamed content: an Experience entry still says "Senior Developer, Company", not "Level 40 Wizard".
 
 ### Content and privacy
 
@@ -149,7 +149,7 @@ This Next.js version has breaking changes from what you may remember. Read the r
 - `src/lib/data/`: `PortfolioRepository` interface and the JSON implementation. Pages and routes call `getRepository()`, never read JSON directly.
 - `src/lib/config/`: validated environment (`server.ts` is `server-only`, `public.ts` is for `NEXT_PUBLIC_*`).
 - `src/lib/http/`: API helpers (JSON responses, CORS, error wrapper).
-- `src/lib/routing/`, `src/lib/images.ts`, `src/lib/format.ts`, `src/lib/cx.ts`, `src/lib/stats.ts`: shared helpers. `src/lib/projects.ts` and `src/lib/experience.ts`: the redaction helpers every project and experience output goes through. `src/lib/skills.ts`: skill ranks, "Used in N quests" counts and the `/projects?tech=` matching. `src/lib/hooks/`: client hooks (`usePrefersReducedMotion`, `useMediaQuery`).
+- `src/lib/routing/`, `src/lib/images.ts`, `src/lib/format.ts`, `src/lib/cx.ts`, `src/lib/stats.ts`: shared helpers. `src/lib/projects.ts` and `src/lib/experience.ts`: the redaction helpers every project and experience output goes through. `src/lib/skills.ts`: skill ranks, "Used in N quests" counts and the `/projects?tech=` matching. `src/lib/names.ts`: `toNameKey`, the trimmed, lowercased comparison key for technology, skill and company names. `src/lib/hooks/`: client hooks (`usePrefersReducedMotion`, `useMediaQuery`).
 - `src/proxy.ts`: runs for `/projects/:slug` only and answers unknown slugs with a real 404.
 - `src/instrumentation.ts` and `src/instrumentation-node.ts`: validate server config at startup.
 - `public/`: static assets, including `public/images/`.
