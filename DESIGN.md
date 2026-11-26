@@ -31,7 +31,7 @@ Navigation is a HUD-style bar. A thin scroll "boost meter" shows reading progres
 **No age signals anywhere on the site.** No total years of experience, no "years coding" stat, no years-per-skill stat, no career start year, no graduation years, no birth date. They are never rendered or exposed in pages, API responses, JSON-LD, metadata, alt text or stats. Every later issue must follow this rule.
 
 - No dates (dates, date ranges or durations) are rendered or exposed anywhere: pages, API responses, metadata, JSON-LD.
-- Experience keeps a single `DATED_COMPANY_LIMIT` constant in code, currently `0` (see #8), so the owner can switch dates back on later for recent roles only.
+- Experience keeps a single `DATED_COMPANY_LIMIT` constant in `src/lib/experience.ts`, currently `0` (see #8), so the owner can switch dates back on later for the roles at the most recent companies only. Every experience output (the page, `/api/experience`, any future metadata or feed) goes through `toPublicExperience`, which omits the date keys of every entry outside that limit. An ongoing role may be labelled "Current" (no dates, no durations, no "Active quest"); undated roles get no "earlier experience" heading and no count of years or roles.
 - Project dates are also redacted from pages and API (see #7).
 - Dates may remain in the JSON data for ordering.
 - Stat tiles use values derived from the content data (for example projects completed, distinct technologies, class/role, currently learning), never invented numbers.
@@ -149,7 +149,7 @@ This Next.js version has breaking changes from what you may remember. Read the r
 - `src/lib/data/`: `PortfolioRepository` interface and the JSON implementation. Pages and routes call `getRepository()`, never read JSON directly.
 - `src/lib/config/`: validated environment (`server.ts` is `server-only`, `public.ts` is for `NEXT_PUBLIC_*`).
 - `src/lib/http/`: API helpers (JSON responses, CORS, error wrapper).
-- `src/lib/routing/`, `src/lib/images.ts`, `src/lib/format.ts`, `src/lib/cx.ts`: shared helpers. `src/lib/hooks/`: client hooks (`usePrefersReducedMotion`).
+- `src/lib/routing/`, `src/lib/images.ts`, `src/lib/format.ts`, `src/lib/cx.ts`, `src/lib/stats.ts`: shared helpers. `src/lib/projects.ts` and `src/lib/experience.ts`: the redaction helpers every project and experience output goes through. `src/lib/hooks/`: client hooks (`usePrefersReducedMotion`, `useMediaQuery`).
 - `src/proxy.ts`: runs for `/projects/:slug` only and answers unknown slugs with a real 404.
 - `src/instrumentation.ts` and `src/instrumentation-node.ts`: validate server config at startup.
 - `public/`: static assets, including `public/images/`.
