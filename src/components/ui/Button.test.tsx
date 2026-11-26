@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { Button } from "./Button";
+import { buttonClasses } from "./buttonStyles";
 
 describe("Button", () => {
   it("renders a native button named by its text that defaults to type=button", async () => {
@@ -51,6 +52,16 @@ describe("Button", () => {
     expect(button.className).not.toMatch(
       /(^|\s)(transition-(?!none)|duration-|ease-|animate-|active:translate)/,
     );
+  });
+
+  it("has a compact sm size with no conflicting md padding", () => {
+    render(<Button size="sm">Small</Button>);
+    const button = screen.getByRole("button", { name: "Small" });
+    expect(button).toHaveClass("min-h-11", "px-3.5", "text-sm");
+    expect(button).not.toHaveClass("px-5");
+    expect(button).not.toHaveClass("py-2.5");
+    expect(buttonClasses("ghost", undefined, "sm").split(/\s+/)).not.toContain("px-5");
+    expect(buttonClasses("ghost").split(/\s+/)).toContain("px-5");
   });
 
   it("does not fire clicks when disabled", async () => {

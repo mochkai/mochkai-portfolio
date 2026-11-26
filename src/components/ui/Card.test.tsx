@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Card } from "./Card";
+import { CARD_PANEL, CARD_SURFACE, Card } from "./Card";
 
 describe("Card", () => {
   it("renders a div panel with the rune line by default", () => {
@@ -53,5 +53,14 @@ describe("Card", () => {
     expect(card.className).not.toMatch(
       /(^|\s)(transition-(?!none)|duration-|ease-|animate-|active:translate)/,
     );
+  });
+});
+
+describe("CARD_PANEL", () => {
+  it("is CARD_SURFACE without any position class, for fixed or absolute panels", () => {
+    expect(CARD_PANEL.split(/\s+/)).not.toEqual(
+      expect.arrayContaining([expect.stringMatching(/^(relative|absolute|fixed|sticky|static)$/)]),
+    );
+    expect(CARD_SURFACE).toBe(`relative ${CARD_PANEL}`);
   });
 });

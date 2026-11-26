@@ -10,16 +10,22 @@ export interface PageHeaderProps {
   /** Optional HUD label shown above the title (for example "Quest board"). */
   label?: string;
   children?: ReactNode;
+  /**
+   * Optional hidden rune shard (a `Collectible`), shown at the end of the label row. Only used
+   * when `label` is set.
+   */
+  collectible?: ReactNode;
 }
 
 /**
- * The `<h1>`, an optional HUD label above it and optional intro text at the top of a page.
- * From `lg` up, a faint decorative rune circuit sits in the free space to the right of the
- * header and drifts with a gentle parallax ({@link ParallaxLayer}, off under reduced motion).
- * It only spans the header's own height in otherwise empty space, so no text ever sits on it,
- * and it fits inside `main` at every `lg`+ width (no horizontal scrolling).
+ * The `<h1>`, an optional HUD label above it (optionally followed by a hidden rune shard) and
+ * optional intro text at the top of a page. From `lg` up, a faint decorative rune circuit sits
+ * in the free space to the right of the header and drifts with a gentle parallax
+ * ({@link ParallaxLayer}, off under reduced motion). It only spans the header's own height in
+ * otherwise empty space, so no text ever sits on it, and it fits inside `main` at every `lg`+
+ * width (no horizontal scrolling).
  */
-export function PageHeader({ title, label, children }: PageHeaderProps) {
+export function PageHeader({ title, label, children, collectible }: PageHeaderProps) {
   return (
     <header className="relative mb-10 max-w-2xl">
       {/* Inset by more than the parallax range, so it never leaves the header's own height. */}
@@ -29,11 +35,19 @@ export function PageHeader({ title, label, children }: PageHeaderProps) {
       >
         <RuneCircuit opacity={HEADER_CIRCUIT_OPACITY} className="size-full text-neon" />
       </ParallaxLayer>
-      {label && (
-        <Label as="p" rune className="mb-4">
-          {label}
-        </Label>
-      )}
+      {label &&
+        (collectible ? (
+          <div className="mb-2 flex items-center gap-1">
+            <Label as="p" rune>
+              {label}
+            </Label>
+            {collectible}
+          </div>
+        ) : (
+          <Label as="p" rune className="mb-4">
+            {label}
+          </Label>
+        ))}
       <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">{title}</h1>
       {children && <div className="mt-4 text-lg leading-relaxed text-muted">{children}</div>}
     </header>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { ArcaneBackground } from "@/components/ArcaneBackground";
 import { BoostMeter } from "@/components/BoostMeter";
+import { CollectibleToast } from "@/components/CollectibleToast";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { publicConfig } from "@/lib/config/public";
@@ -40,7 +41,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /**
  * Root layout: fonts, the decorative Arcane backdrop (fixed behind everything), skip link, boost
- * meter, HUD header, main landmark and footer.
+ * meter, HUD header, main landmark, footer and the hidden-collectible live region and achievement
+ * toast ({@link CollectibleToast}).
  * The header is sticky from `sm` up, so `main` gets a matching scroll margin for the skip link.
  */
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -68,6 +70,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <SiteFooter name={profile.name} socials={profile.socials} />
+        <CollectibleToast />
       </body>
     </html>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { Collectible } from "@/components/Collectible";
 import { PageHeader } from "@/components/PageHeader";
 import { ProjectList } from "@/components/ProjectList";
 import { QuestFilter } from "@/components/QuestFilter";
@@ -39,7 +40,11 @@ async function renderQuests(searchParams: PageProps<"/projects">["searchParams"]
 export default function ProjectsPage({ searchParams }: PageProps<"/projects">) {
   return (
     <>
-      <PageHeader title="Projects" label="Quest board">
+      <PageHeader
+        title="Projects"
+        label="Quest board"
+        collectible={<Collectible id="quest-board" />}
+      >
         <p>Things I have designed and built, newest first.</p>
       </PageHeader>
       <Suspense
