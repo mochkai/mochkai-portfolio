@@ -90,6 +90,15 @@
    */
   --animate-party-pulse: party-pulse 1.6s ease-in-out infinite;
 
+  /*
+   * Hidden collectibles. animate-shard-collect: a collected rune shard flares bright and settles
+   * into its glow (filter only, no movement, 700 ms, once). animate-achievement-in: the
+   * "Achievement unlocked" toast fades in with a glow (opacity and box-shadow only, 300 ms).
+   * Both are applied only under motion-safe:, so neither runs under reduced motion.
+   */
+  --animate-shard-collect: shard-collect 700ms ease-out;
+  --animate-achievement-in: achievement-in 300ms ease-out;
+
   @keyframes boot {
     0% {
       opacity: 0.35;
@@ -146,6 +155,34 @@
     }
     50% {
       box-shadow: 0 0 40px rgb(57 168 255 / 0.75);
+    }
+  }
+
+  @keyframes shard-collect {
+    0% {
+      filter: brightness(1);
+    }
+    30% {
+      filter: brightness(1.9) drop-shadow(0 0 14px rgb(124 199 255 / 0.9));
+    }
+    100% {
+      filter: drop-shadow(0 0 18px rgb(57 168 255 / 0.5));
+    }
+  }
+
+  /* The inset rune light (inset-shadow-rune) is in both frames, so it never snaps back in. */
+  @keyframes achievement-in {
+    from {
+      opacity: 0;
+      box-shadow:
+        inset 0 0 30px rgb(57 168 255 / 0.06),
+        0 0 0 rgb(57 168 255 / 0);
+    }
+    to {
+      opacity: 1;
+      box-shadow:
+        inset 0 0 30px rgb(57 168 255 / 0.06),
+        0 0 16px rgb(57 168 255 / 0.45);
     }
   }
 

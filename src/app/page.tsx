@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Collectible } from "@/components/Collectible";
 import { JoinTheParty } from "@/components/JoinTheParty";
 import { ParallaxLayer } from "@/components/ParallaxLayer";
 import { ProjectList } from "@/components/ProjectList";
@@ -23,7 +24,7 @@ const LOGO_SRC = "/images/logo.svg";
  * title and bio, a glowing "Press Start" CTA to the projects, secondary CTAs, and a scoreboard
  * computed from the content data. Featured projects follow below as completed-quest cards,
  * redacted with `toPublicProjects` so no project dates reach the page, then the compact
- * "Join the party" contact band.
+ * "Join the party" contact band. A hidden rune shard sits beside the featured heading.
  *
  * Every animation here is CSS only and starts from a visible state, so the hero is fully readable
  * without JavaScript and before the animations finish. Both exist only under `motion-safe:`, so
@@ -118,9 +119,16 @@ export default async function HomePage() {
 
       <section aria-labelledby="featured-heading" className="mt-20">
         <div className="mb-6 flex items-baseline justify-between gap-4">
-          <h2 id="featured-heading" className="font-display text-2xl font-semibold tracking-tight">
-            Featured projects
-          </h2>
+          <div className="flex items-center gap-1">
+            <h2
+              id="featured-heading"
+              className="font-display text-2xl font-semibold tracking-tight"
+            >
+              Featured projects
+            </h2>
+            {/* Hidden rune shard 1 (src/lib/collectibles.ts). */}
+            <Collectible id="title-screen" />
+          </div>
           <Link href="/projects" className="text-sm text-accent hover:underline">
             All projects
           </Link>

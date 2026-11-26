@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { Collectible } from "@/components/Collectible";
 import { ProjectStatusLabel } from "@/components/ProjectStatusLabel";
 import { TechList } from "@/components/TechList";
 import { ButtonLink } from "@/components/ui/ButtonLink";
@@ -93,9 +94,11 @@ export default async function ProjectPage({ params }: PageProps<"/projects/[slug
         <aside aria-label="Project details" className="self-start">
           <Card className="flex flex-col gap-6">
             <div>
-              <Label as="h2" className="mb-3">
-                Built with
-              </Label>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <Label as="h2">Built with</Label>
+                {/* Hidden rune shard 3: the same shard on every project page. */}
+                <Collectible id="quest-loot" className="-my-1 -mr-3" />
+              </div>
               <TechList items={project.tech} label={`Technologies used in ${project.title}`} />
             </div>
             {(live || repo) && (

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { CollectibleCounter } from "./CollectibleCounter";
 import { NavLinks, type NavItem } from "./NavLinks";
 
 /**
@@ -20,10 +21,11 @@ export interface SiteHeaderProps {
 }
 
 /**
- * Site-wide HUD bar: the logo and owner's name as the home link, and the primary navigation as
- * world-map destinations. A slate panel with a rune-line bottom edge; sticky from `sm` up so
- * the HUD stays on screen, and in normal flow on phones (where it takes two rows) to keep the
- * reading area free.
+ * Site-wide HUD bar: the logo and owner's name as the home link, the rune shard counter (only
+ * once a hidden collectible has been found, see {@link CollectibleCounter}) and the primary
+ * navigation as world-map destinations. A slate panel with a rune-line bottom edge; sticky from
+ * `sm` up so the HUD stays on screen, and in normal flow on phones (where it takes two rows) to
+ * keep the reading area free.
  */
 export function SiteHeader({ name }: SiteHeaderProps) {
   return (
@@ -32,19 +34,22 @@ export function SiteHeader({ name }: SiteHeaderProps) {
         aria-label="Main"
         className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 pt-4 pb-2 sm:flex-nowrap sm:px-6 sm:py-3"
       >
-        <Link
-          href="/"
-          className="group flex min-h-11 min-w-0 items-center gap-3 rounded-sm font-display text-lg font-semibold tracking-tight text-foreground hover:text-shadow-glow-sm motion-safe:transition-[text-shadow] motion-safe:duration-150 motion-safe:ease-out motion-reduce:transition-none"
-        >
-          <Image
-            src="/images/logo.svg"
-            alt=""
-            width={32}
-            height={32}
-            className="size-8 shrink-0 rounded-full ring-1 ring-line group-hover:shadow-glow-sm motion-safe:transition-shadow motion-safe:duration-150 motion-safe:ease-out motion-reduce:transition-none"
-          />
-          <span className="truncate">{name}</span>
-        </Link>
+        <div className="flex min-w-0 items-center gap-3">
+          <Link
+            href="/"
+            className="group flex min-h-11 min-w-0 items-center gap-3 rounded-sm font-display text-lg font-semibold tracking-tight text-foreground hover:text-shadow-glow-sm motion-safe:transition-[text-shadow] motion-safe:duration-150 motion-safe:ease-out motion-reduce:transition-none"
+          >
+            <Image
+              src="/images/logo.svg"
+              alt=""
+              width={32}
+              height={32}
+              className="size-8 shrink-0 rounded-full ring-1 ring-line group-hover:shadow-glow-sm motion-safe:transition-shadow motion-safe:duration-150 motion-safe:ease-out motion-reduce:transition-none"
+            />
+            <span className="truncate">{name}</span>
+          </Link>
+          <CollectibleCounter />
+        </div>
         <NavLinks items={NAV_ITEMS} />
       </nav>
       {/* Rune line: a faint neon glow along the bottom edge. */}

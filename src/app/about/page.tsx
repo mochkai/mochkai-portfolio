@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { Collectible } from "@/components/Collectible";
 import { JoinTheParty } from "@/components/JoinTheParty";
 import { PageHeader } from "@/components/PageHeader";
 import { SkillTree } from "@/components/SkillTree";
@@ -76,13 +77,17 @@ export default async function AboutPage() {
                 <p className="mt-1 text-muted">{profile.title}</p>
               </div>
             </div>
-            <div className="relative mt-5 flex flex-col items-start gap-2">
-              <Label as="p" rune>
-                Class · {getCharacterClass(profile)}
-              </Label>
-              <Label as="p" rune>
-                Region · {profile.location}
-              </Label>
+            <div className="relative mt-5 flex items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-col items-start gap-2">
+                <Label as="p" rune>
+                  Class · {getCharacterClass(profile)}
+                </Label>
+                <Label as="p" rune>
+                  Region · {profile.location}
+                </Label>
+              </div>
+              {/* Hidden rune shard 5 (src/lib/collectibles.ts). */}
+              <Collectible id="character-sheet" className="-mt-3 -mr-2" />
             </div>
             <StatGrid
               label="Character stats"
