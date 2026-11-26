@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { ArcaneBackground } from "@/components/ArcaneBackground";
 import { BoostMeter } from "@/components/BoostMeter";
 import { CollectibleToast } from "@/components/CollectibleToast";
+import { EasterEggs } from "@/components/EasterEggs";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { publicConfig } from "@/lib/config/public";
@@ -42,7 +43,8 @@ export async function generateMetadata(): Promise<Metadata> {
 /**
  * Root layout: fonts, the decorative Arcane backdrop (fixed behind everything), skip link, boost
  * meter, HUD header, main landmark, footer and the hidden-collectible live region and achievement
- * toast ({@link CollectibleToast}).
+ * toast ({@link CollectibleToast}), and the Easter eggs ({@link EasterEggs}: secret-input overdrive,
+ * rapid logo clicks and a console greeting).
  * The header is sticky from `sm` up, so `main` gets a matching scroll margin for the skip link.
  */
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -71,6 +73,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         </main>
         <SiteFooter name={profile.name} socials={profile.socials} />
         <CollectibleToast />
+        <EasterEggs />
       </body>
     </html>
   );

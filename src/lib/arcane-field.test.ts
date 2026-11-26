@@ -9,6 +9,7 @@ import {
   MAX_DPR,
   MAX_NODES_COMPACT,
   MAX_NODES_WIDE,
+  SURGE_TRACE_ALPHA,
   clampDpr,
   createField,
   createRandom,
@@ -244,6 +245,30 @@ describe("drawField", () => {
       pointer: { x: field.nodes[0].x, y: field.nodes[0].y },
     });
     expect(lit.stroke.mock.calls.length).toBeGreaterThan(calm.stroke.mock.calls.length);
+  });
+
+  it("surges brighter in overdrive, still only in the ink and never above full alpha", () => {
+    /** Records every alpha set while drawing one frame. */
+    const alphasOf = (surge: boolean) => {
+      const ctx = stubContext();
+      const alphas: number[] = [];
+      Object.defineProperty(ctx, "globalAlpha", {
+        get: () => alphas.at(-1) ?? 1,
+        set: (value: number) => alphas.push(value),
+      });
+      drawField(ctx as unknown as CanvasRenderingContext2D, field, { ...base, surge });
+      expect(ctx.strokeStyle).toBe(FIELD_INK);
+      expect(ctx.fillStyle).toBe(FIELD_INK);
+      return alphas.slice(0, -1); // The last one resets to 1.
+    };
+    const calm = alphasOf(false);
+    const surging = alphasOf(true);
+    expect(surging).toHaveLength(calm.length);
+    expect(surging[0]).toBe(SURGE_TRACE_ALPHA);
+    surging.forEach((value, i) => {
+      expect(value).toBeGreaterThan(calm[i]);
+      expect(value).toBeLessThanOrEqual(1);
+    });
   });
 });
 

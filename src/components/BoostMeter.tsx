@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { cx } from "@/lib/cx";
+import { useOverdrive } from "@/lib/hooks/use-overdrive";
 import { usePrefersReducedMotion } from "@/lib/hooks/use-prefers-reduced-motion";
 import { getScrollProgress } from "@/lib/scroll-progress";
 
@@ -16,12 +17,17 @@ import { getScrollProgress } from "@/lib/scroll-progress";
  *   `transform` written straight to the DOM, so scrolling never re-renders React.
  * - Reduced motion: the meter still shows the position, but jumps to it without easing.
  *   The glow is static in both modes.
+ * - Overdrive (the secret-input Easter egg, see `EasterEggs`): for a few seconds the track
+ *   lights up and the fill burns brighter with a stronger glow (a static color change); only
+ *   under `motion-safe:` the glow also surges (`animate-overdrive-surge`, filter and shadow
+ *   only, no movement). `data-overdrive` mirrors it for tests.
  * - The current value is mirrored to `data-progress` (0 to 1, three decimals) for tests.
  */
 export function BoostMeter() {
   const meterRef = useRef<HTMLDivElement>(null);
   const fillRef = useRef<HTMLDivElement>(null);
   const reducedMotion = usePrefersReducedMotion();
+  const overdrive = useOverdrive();
 
   useEffect(() => {
     const meter = meterRef.current;
@@ -65,14 +71,21 @@ export function BoostMeter() {
       aria-hidden="true"
       data-testid="boost-meter"
       data-progress="0.000"
-      className="pointer-events-none fixed inset-x-0 top-0 z-50 h-1 bg-surface-raised/80"
+      data-overdrive={overdrive}
+      className={cx(
+        "pointer-events-none fixed inset-x-0 top-0 z-50 h-1",
+        overdrive ? "bg-neon/25" : "bg-surface-raised/80",
+      )}
     >
       <div
         ref={fillRef}
         data-testid="boost-meter-fill"
         style={{ transform: "scaleX(0)" }}
         className={cx(
-          "h-full origin-left bg-linear-to-r from-brand via-neon to-glow shadow-glow-sm",
+          "h-full origin-left bg-linear-to-r from-brand via-neon to-glow",
+          overdrive
+            ? "shadow-glow-lg brightness-150 motion-safe:animate-overdrive-surge"
+            : "shadow-glow-sm",
           reducedMotion
             ? "transition-none"
             : "motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out motion-reduce:transition-none",

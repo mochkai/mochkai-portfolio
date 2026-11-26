@@ -58,7 +58,7 @@ export default async function ProjectPage({ params }: PageProps<"/projects/[slug
 
   return (
     <article aria-labelledby="project-title">
-      <ButtonLink href="/projects" variant="ghost" className="-ml-3 px-3 py-1.5 text-sm">
+      <ButtonLink href="/projects" variant="ghost" size="sm" className="-ml-3.5">
         <span aria-hidden="true">←</span>
         All projects
       </ButtonLink>

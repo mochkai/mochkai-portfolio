@@ -66,6 +66,16 @@ const FRAME_TOLERANCE_MS = 2;
 /** Base alpha of the traces (inside the canvas, before {@link FIELD_OPACITY}). */
 const TRACE_ALPHA = 0.32;
 
+/**
+ * Trace alpha during the "overdrive" Easter egg (#13): the circuit surges brighter, but still
+ * only in {@link FIELD_INK} at most at full alpha, so the {@link FIELD_OPACITY} contrast cap
+ * (WCAG AA for text on the bare background) still holds.
+ */
+export const SURGE_TRACE_ALPHA = 0.8;
+
+/** Extra node alpha during overdrive (clamped to 1, like the pointer boost). */
+export const SURGE_NODE_BOOST = 0.4;
+
 /** One glowing junction of the circuit. */
 export interface FieldNode {
   /** Position inside the tile, in CSS pixels. */
@@ -108,6 +118,8 @@ export interface FrameState {
   offsetY: number;
   /** Pointer position in viewport pixels, or `null` when there is none (or it may not react). */
   pointer: { x: number; y: number } | null;
+  /** Overdrive: traces and nodes drawn brighter (never brighter than the ink). Default off. */
+  surge?: boolean;
 }
 
 /**
@@ -248,7 +260,9 @@ export function wrapShift(y: number, tileHeight: number, margin: number): number
  * @param frame - Viewport size, clock, parallax offset and pointer.
  */
 export function drawField(ctx: CanvasRenderingContext2D, field: Field, frame: FrameState): void {
-  const { width, height, time, offsetY, pointer } = frame;
+  const { width, height, time, offsetY, pointer, surge = false } = frame;
+  const traceAlpha = surge ? SURGE_TRACE_ALPHA : TRACE_ALPHA;
+  const nodeBoost = surge ? SURGE_NODE_BOOST : 0;
   const { nodes, edges, cell, tileHeight } = field;
 
   // Screen positions (after parallax, wrap and pointer drift) and pointer boost per node.
@@ -313,7 +327,7 @@ export function drawField(ctx: CanvasRenderingContext2D, field: Field, frame: Fr
 
   // Calm traces share one path; traces near the pointer are stroked brighter, one by one.
   const hot: Array<{ edge: FieldEdge; toY: number; boost: number }> = [];
-  ctx.globalAlpha = TRACE_ALPHA;
+  ctx.globalAlpha = traceAlpha;
   ctx.beginPath();
   for (const edge of edges) {
     const fromY = ys[edge.from];
@@ -326,7 +340,7 @@ export function drawField(ctx: CanvasRenderingContext2D, field: Field, frame: Fr
   ctx.stroke();
 
   for (const { edge, toY, boost } of hot) {
-    ctx.globalAlpha = Math.min(1, TRACE_ALPHA + boost * 0.68);
+    ctx.globalAlpha = Math.min(1, traceAlpha + boost * 0.68);
     ctx.beginPath();
     trace(edge, xs[edge.from], ys[edge.from], xs[edge.to], toY);
     ctx.stroke();
@@ -339,7 +353,7 @@ export function drawField(ctx: CanvasRenderingContext2D, field: Field, frame: Fr
     const node = nodes[i];
     const pulse = 0.5 + 0.5 * Math.sin(time / 1100 + node.phase);
     const base = node.lit ? 0.55 + 0.35 * pulse : 0.3 + 0.2 * pulse;
-    ctx.globalAlpha = Math.min(1, base + boosts[i] * 0.6);
+    ctx.globalAlpha = Math.min(1, base + nodeBoost + boosts[i] * 0.6);
     const size = (node.lit ? 3 : 2) + boosts[i] * 1.5;
     const x = xs[i];
     ctx.beginPath();
@@ -359,6 +373,11 @@ export interface ArcaneFieldOptions {
   animate: boolean;
   /** React to a fine mouse pointer. Ignored unless `animate` is true. */
   pointer: boolean;
+  /**
+   * Overdrive (#13): draw the circuit brighter. Works in the static frame too, so reduced
+   * motion gets a still, brighter frame. Default off.
+   */
+  surge?: boolean;
 }
 
 /**
@@ -381,7 +400,7 @@ export interface ArcaneFieldOptions {
 export function startArcaneField(
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
-  { animate, pointer: reactToPointer }: ArcaneFieldOptions,
+  { animate, pointer: reactToPointer, surge = false }: ArcaneFieldOptions,
 ): () => void {
   const pointerEnabled = animate && reactToPointer;
   const frameMs = pointerEnabled ? FRAME_MS_FINE : FRAME_MS_COARSE;
@@ -405,6 +424,7 @@ export function startArcaneField(
       time: animate ? time : 0,
       offsetY: animate ? window.scrollY * PARALLAX_FACTOR : 0,
       pointer: pointerEnabled ? pointer : null,
+      surge,
     });
   };
 
