@@ -219,6 +219,21 @@ describe("SiteHeader", () => {
   });
 });
 
+describe("SiteHeader fast travel button", () => {
+  it("adds the palette button after the nav links, moved onto the name's row on phones", () => {
+    render(<SiteHeader name="Ada Fixture" />);
+    const nav = screen.getByRole("navigation", { name: "Main" });
+    const button = within(nav).getByRole("button", { name: "Fast travel" });
+    const list = within(nav).getByRole("list");
+    // DOM order: name, links, button (keyboard order matches the desktop bar).
+    expect(list.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // On phones the name block and the button share order -1, so the links wrap below them.
+    expect(button).toHaveClass("max-sm:-order-1", "min-h-11");
+    expect(nav.firstElementChild).toHaveClass("max-sm:-order-1");
+    expect(button).toHaveAttribute("aria-keyshortcuts", "Control+K Meta+K");
+  });
+});
+
 describe("SiteHeader logo", () => {
   it("shows the logo as a decorative image inside the home link", () => {
     render(<SiteHeader name="Ada Fixture" />);

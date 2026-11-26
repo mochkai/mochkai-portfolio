@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderToString } from "react-dom/server";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { PROGRESS_STORAGE_KEY, progressStore } from "@/lib/collectible-progress";
 import { COLLECTIBLES } from "@/lib/collectibles";
 import { Collectible } from "./Collectible";
@@ -147,6 +147,25 @@ describe("CollectibleToast", () => {
     expect(screen.queryByTestId("achievement-toast")).toBeNull();
     expect(lastShard).toHaveFocus();
     expect(progressStore.getSnapshot().found).toHaveLength(5);
+  });
+
+  it("ignores Escape while a modal dialog (the command palette) is open or it was claimed", async () => {
+    renderAll();
+    await collectAll();
+    const claimed = new KeyboardEvent("keydown", { key: "Escape", cancelable: true });
+    claimed.preventDefault();
+    document.dispatchEvent(claimed);
+    expect(screen.getByTestId("achievement-toast")).toBeInTheDocument();
+    const query = document.querySelector.bind(document);
+    const modal = document.createElement("dialog");
+    const spy = vi
+      .spyOn(document, "querySelector")
+      .mockImplementation((selector: string) =>
+        selector === "dialog:modal" ? modal : query(selector),
+      );
+    await userEvent.keyboard("{Escape}");
+    expect(screen.getByTestId("achievement-toast")).toBeInTheDocument();
+    spy.mockRestore();
   });
 
   it("closes on Escape", async () => {

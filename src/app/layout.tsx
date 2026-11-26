@@ -3,9 +3,11 @@ import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { ArcaneBackground } from "@/components/ArcaneBackground";
 import { BoostMeter } from "@/components/BoostMeter";
 import { CollectibleToast } from "@/components/CollectibleToast";
+import { CommandPalette } from "@/components/CommandPalette";
 import { EasterEggs } from "@/components/EasterEggs";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { buildCommands } from "@/lib/command-palette";
 import { publicConfig } from "@/lib/config/public";
 import { getRepository } from "@/lib/data";
 import "./globals.css";
@@ -44,11 +46,22 @@ export async function generateMetadata(): Promise<Metadata> {
  * Root layout: fonts, the decorative Arcane backdrop (fixed behind everything), skip link, boost
  * meter, HUD header, main landmark, footer and the hidden-collectible live region and achievement
  * toast ({@link CollectibleToast}), and the Easter eggs ({@link EasterEggs}: secret-input overdrive,
- * rapid logo clicks and a console greeting).
+ * rapid logo clicks and a console greeting), and the one Ctrl+K / Cmd+K "Fast travel"
+ * {@link CommandPalette}, whose commands are built here from the profile and projects.
  * The header is sticky from `sm` up, so `main` gets a matching scroll margin for the skip link.
  */
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const profile = await getRepository().getProfile();
+  const repository = getRepository();
+  const [profile, projects] = await Promise.all([
+    repository.getProfile(),
+    repository.getProjects(),
+  ]);
+  // Only slugs, titles, the email and social links reach the palette: no dates.
+  const commands = buildCommands({
+    projects: projects.map(({ slug, title }) => ({ slug, title })),
+    email: profile.email,
+    socials: profile.socials,
+  });
 
   return (
     <html
@@ -74,6 +87,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <SiteFooter name={profile.name} socials={profile.socials} />
         <CollectibleToast />
         <EasterEggs />
+        <CommandPalette commands={commands} />
       </body>
     </html>
   );

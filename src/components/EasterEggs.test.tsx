@@ -26,6 +26,15 @@ function classesOf(element: Element): string[] {
   return [...element.classList];
 }
 
+/** Makes `document.querySelector("dialog:modal")` report an open modal (jsdom has none). */
+function fakeModalOpen() {
+  const query = document.querySelector.bind(document);
+  const modal = document.createElement("dialog");
+  vi.spyOn(document, "querySelector").mockImplementation((selector: string) =>
+    selector === "dialog:modal" ? modal : query(selector),
+  );
+}
+
 let info: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
@@ -225,6 +234,19 @@ describe("EasterEggs: toast and effect lifetime", () => {
     expect(screen.queryByTestId("easter-egg-toast")).toBeNull();
     expect(overdriveStore.getSnapshot()).toBe(false);
     expect(elsewhere).toHaveFocus();
+  });
+
+  it("ignores Escape while a modal dialog (the command palette) is open or it was claimed", async () => {
+    render(<EasterEggs />);
+    await userEvent.keyboard(CODE_KEYS);
+    const claimed = new KeyboardEvent("keydown", { key: "Escape", cancelable: true });
+    claimed.preventDefault();
+    document.dispatchEvent(claimed);
+    expect(screen.getByTestId("easter-egg-toast")).toBeInTheDocument();
+    fakeModalOpen();
+    await userEvent.keyboard("{Escape}");
+    expect(screen.getByTestId("easter-egg-toast")).toBeInTheDocument();
+    expect(overdriveStore.getSnapshot()).toBe(true);
   });
 
   it("closes on Escape", async () => {

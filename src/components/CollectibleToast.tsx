@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/Label";
 import { progressStore } from "@/lib/collectible-progress";
 import { COLLECTIBLE_COUNT } from "@/lib/collectibles";
 import { useCollectibleProgress } from "@/lib/hooks/use-collectible-progress";
-import { closeToast } from "@/lib/toast-focus";
+import { closeToast, isEscapeClaimed } from "@/lib/toast-focus";
 
 /**
  * Site-wide collectible feedback, rendered once in the root layout (outside the header, whose
@@ -35,9 +35,9 @@ export function CollectibleToast() {
     const active = document.activeElement;
     returnFocus.current = active instanceof HTMLElement ? active : null;
 
-    /** Escape closes the toast. */
+    /** Escape closes the toast, unless a modal dialog or another handler claimed it. */
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && !isEscapeClaimed(event)) {
         closeToast(toastRef, returnFocus, () => progressStore.dismissAchievement());
       }
     };

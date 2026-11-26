@@ -109,6 +109,13 @@
   --animate-overdrive-surge: overdrive-surge 0.9s ease-in-out 4;
   --animate-egg-toast-in: achievement-in 300ms ease-out;
 
+  /*
+   * Command palette (#14). animate-palette-in: the "Fast travel" dialog fades in as its glow
+   * powers up (opacity and box-shadow only, no movement, 160 ms, once per open). Applied only
+   * under motion-safe:, so it never runs under reduced motion; closing is instant.
+   */
+  --animate-palette-in: palette-in 160ms ease-out;
+
   @keyframes boot {
     0% {
       opacity: 0.35;
@@ -193,6 +200,22 @@
       box-shadow:
         inset 0 0 30px rgb(57 168 255 / 0.06),
         0 0 16px rgb(57 168 255 / 0.45);
+    }
+  }
+
+  /* Ends on the dialog's own shadows (inset-shadow-rune plus shadow-glow-lg), so nothing snaps. */
+  @keyframes palette-in {
+    from {
+      opacity: 0;
+      box-shadow:
+        inset 0 0 30px rgb(57 168 255 / 0.06),
+        0 0 0 rgb(57 168 255 / 0);
+    }
+    to {
+      opacity: 1;
+      box-shadow:
+        inset 0 0 30px rgb(57 168 255 / 0.06),
+        0 0 28px rgb(57 168 255 / 0.55);
     }
   }
 

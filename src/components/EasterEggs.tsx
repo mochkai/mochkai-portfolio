@@ -12,7 +12,7 @@ import {
   registerRapidClick,
 } from "@/lib/konami";
 import { overdriveStore } from "@/lib/overdrive";
-import { closeToast } from "@/lib/toast-focus";
+import { closeToast, isEscapeClaimed } from "@/lib/toast-focus";
 
 /** How long an Easter egg toast stays up (ms) while it is neither hovered nor focused. */
 export const EGG_TOAST_MS = 6000;
@@ -166,9 +166,12 @@ export function EasterEggs() {
   // Escape closes the toast.
   useEffect(() => {
     if (!toast) return;
-    /** Escape closes the toast (it never stops other Escape handlers). */
+    /**
+     * Escape closes the toast (it never stops other Escape handlers), unless a modal dialog such
+     * as the command palette is open or another handler claimed the press.
+     */
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") dismiss();
+      if (event.key === "Escape" && !isEscapeClaimed(event)) dismiss();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
