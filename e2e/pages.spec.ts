@@ -125,6 +125,145 @@ test.describe("pages", () => {
     await expect(tech.getByRole("listitem")).toHaveText(first.tech);
   });
 
+  test("projects page is a quest board of cards with tech tags and no dates", async ({
+    page,
+    request,
+  }) => {
+    const projects: { slug: string; title: string; tech: string[] }[] = await (
+      await request.get("/api/projects")
+    ).json();
+    await page.goto("/projects");
+    await expect(page.getByText("Quest board")).toBeVisible();
+    const cards = page.getByTestId("project-card");
+    await expect(cards).toHaveCount(projects.length);
+    for (const [index, project] of projects.entries()) {
+      const card = cards.nth(index);
+      // One link per card (the stretched title link), pointing at the detail page.
+      await expect(card.getByRole("link")).toHaveCount(1);
+      await expect(card.getByRole("link")).toHaveAttribute("href", `/projects/${project.slug}`);
+      await expect(
+        card.getByRole("list", { name: `Technologies used in ${project.title}` }),
+      ).toBeVisible();
+    }
+    const text = await page.locator("main").innerText();
+    expect(text).not.toMatch(/\b(19|20)\d{2}\b/);
+    expect(text).not.toMatch(/\bpresent\b/i);
+  });
+
+  test("clicking anywhere on a card opens its detail page", async ({ page, request }) => {
+    const [first]: { slug: string }[] = await (await request.get("/api/projects")).json();
+    await page.goto("/projects");
+    // Click the image area, far from the title text: the stretched link covers the card.
+    // Clicking the <img> locator itself would fail Playwright's hit-target check, because the
+    // stretched link (correctly) sits on top of it; click the card at the image's position.
+    const card = page.getByTestId("project-card").first();
+    const cardBox = (await card.boundingBox())!;
+    const imgBox = (await card.locator("img").boundingBox())!;
+    await card.click({
+      position: {
+        x: imgBox.x - cardBox.x + imgBox.width / 2,
+        y: imgBox.y - cardBox.y + imgBox.height / 2,
+      },
+    });
+    await expect(page).toHaveURL(new RegExp(`/projects/${escapeRegExp(first.slug)}$`));
+  });
+
+  test("keyboard focus on a card shows the glow", async ({ page }) => {
+    await page.goto("/projects");
+    const card = page.getByTestId("project-card").first();
+    const before = await card.evaluate((el) => getComputedStyle(el).boxShadow);
+    await card.getByRole("link").focus();
+    await expect(card.getByRole("link")).toBeFocused();
+    await expect.poll(() => card.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe(before);
+    await expect(card).not.toHaveCSS("box-shadow", "none");
+  });
+
+  test("cards tilt towards a fine pointer, at most about 6 degrees, and reset on leave", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/projects");
+    const tilt = page.getByTestId("tilt-card").first();
+    await expect(tilt).toHaveAttribute("data-tilt", "on");
+    const box = (await tilt.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.move(box.x + box.width - 24, box.y + 24, { steps: 5 });
+    await expect.poll(() => tilt.evaluate((el) => el.style.transform)).toMatch(/rotateX/);
+    const angles = await tilt.evaluate((el) =>
+      [...el.style.transform.matchAll(/rotate[XY]\((-?[\d.]+)deg\)/g)].map((m) => Number(m[1])),
+    );
+    expect(angles).toHaveLength(2);
+    for (const angle of angles) expect(Math.abs(angle)).toBeLessThanOrEqual(6);
+
+    await page.mouse.move(0, 0);
+    await expect.poll(() => tilt.evaluate((el) => el.style.transform)).toBe("");
+  });
+
+  test("cards do not tilt under reduced motion but still glow on hover", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/projects");
+    const tilt = page.getByTestId("tilt-card").first();
+    await expect(tilt).toHaveAttribute("data-tilt", "off");
+    const box = (await tilt.boundingBox())!;
+    await page.mouse.move(box.x + box.width - 24, box.y + 24, { steps: 5 });
+    await expect(tilt).toHaveCSS("transform", "none");
+    await expect(page.getByTestId("project-card").first()).not.toHaveCSS("box-shadow", "none");
+  });
+
+  test("project detail page shows the quest in the new style without dates", async ({
+    page,
+    request,
+  }) => {
+    const [first]: {
+      slug: string;
+      title: string;
+      tech: string[];
+      links: { repo?: string; live?: string };
+    }[] = await (await request.get("/api/projects")).json();
+    await page.goto(`/projects/${first.slug}`);
+    await expect(page.getByRole("heading", { level: 1, name: first.title })).toBeVisible();
+    await expect(page.getByTestId("project-hero-image")).toBeVisible();
+    await expect(page.getByTestId("project-hero-image")).toHaveAttribute("fetchpriority", "high");
+    await expect(
+      page.getByRole("list", { name: `Technologies used in ${first.title}` }).getByRole("listitem"),
+    ).toHaveText(first.tech);
+    if (first.links.repo) {
+      const repo = page.getByRole("link", { name: /^View source code/ });
+      await expect(repo).toHaveAttribute("href", first.links.repo);
+      await expect(repo).toHaveAttribute("rel", "noopener noreferrer");
+    }
+    await page.getByRole("link", { name: "All projects" }).click();
+    await expect(page).toHaveURL(/\/projects$/);
+  });
+
+  test("no project page or its metadata exposes a date", async ({ request }) => {
+    const projects: { slug: string }[] = await (await request.get("/api/projects")).json();
+    for (const path of ["/", "/projects", ...projects.map((p) => `/projects/${p.slug}`)]) {
+      const html = await (await request.get(path)).text();
+      // Raw YYYY-MM values (HTML, RSC payload, metadata) and formatted ranges.
+      expect(html, path).not.toMatch(/\b(19|20)\d{2}-(0[1-9]|1[0-2])\b/);
+      expect(html, path).not.toMatch(
+        /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (19|20)\d{2}\b/,
+      );
+      expect(html, path).not.toMatch(/startDate|endDate/);
+    }
+  });
+
+  for (const width of [375, 768, 1280]) {
+    test(`projects and a detail page fit at ${width} px without horizontal scrolling`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      for (const path of ["/projects", "/projects/project-one"]) {
+        await page.goto(path);
+        const overflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        );
+        expect(overflow, path).toBeLessThanOrEqual(0);
+      }
+    });
+  }
+
   test("unknown project slug shows the not-found page and is not indexed", async ({ page }) => {
     await page.goto("/projects/does-not-exist");
     await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();

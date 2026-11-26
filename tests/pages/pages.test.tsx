@@ -8,6 +8,33 @@ import ProjectsPage from "@/app/projects/page";
 import experienceData from "@/data/experience.json";
 import profileData from "@/data/profile.json";
 import projectsData from "@/data/projects.json";
+import { formatDateRange, formatMonth } from "@/lib/format";
+
+/**
+ * Every way a project date from the content data could show up in markup: the raw `YYYY-MM`
+ * values and the formatted months and ranges.
+ */
+const PROJECT_DATE_STRINGS = projectsData.flatMap((p) => {
+  const months = [p.startDate, p.endDate].filter((d): d is string => d !== null);
+  return [...months, ...months.map(formatMonth), formatDateRange(p.startDate, p.endDate)];
+});
+
+/**
+ * Asserts that `container` shows no project dates. Raw and formatted dates are checked on the
+ * HTML (attributes included); bare years and "Present" only on the visible text, because image
+ * URLs can legitimately contain numbers such as `w=1920`. A string (serialized metadata) gets
+ * every check.
+ */
+function expectNoProjectDates(target: HTMLElement | string) {
+  const html = typeof target === "string" ? target : target.innerHTML;
+  const text = typeof target === "string" ? target : (target.textContent ?? "");
+  for (const value of PROJECT_DATE_STRINGS) expect(html).not.toContain(value);
+  expect(html).not.toMatch(/\b(19|20)\d{2}-(0[1-9]|1[0-2])\b/);
+  expect(html).not.toMatch(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w* \d/i);
+  for (const p of projectsData) expect(text).not.toContain(p.startDate.slice(0, 4));
+  expect(text).not.toMatch(/\b(19|20)\d{2}\b/);
+  expect(text).not.toMatch(/\bpresent\b/i);
+}
 
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
@@ -84,6 +111,15 @@ describe("HomePage", () => {
     expect(text).not.toMatch(/\byears?\b|\bsince\b|\bpresent\b/i);
     expect(text).not.toMatch(/\b(19|20)\d{2}\b/);
     expect(text).not.toMatch(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w* \d/i);
+    expectNoProjectDates(container);
+  });
+
+  it("shows the featured projects as quest cards", async () => {
+    render(await HomePage());
+    const featured = screen.getByRole("region", { name: "Featured projects" });
+    expect(within(featured).getAllByTestId("project-card")).toHaveLength(
+      projectsData.filter((p) => p.featured).length,
+    );
   });
 
   it("turns the boot-up and pulse animations off under reduced motion", async () => {
@@ -100,38 +136,69 @@ describe("HomePage", () => {
 });
 
 describe("ProjectsPage", () => {
-  it("lists every project with a link to its detail page", async () => {
+  it("is a quest board of project cards, each linking to its detail page", async () => {
     render(await ProjectsPage());
     expect(screen.getByRole("heading", { level: 1, name: "Projects" })).toBeInTheDocument();
+    expect(screen.getByText("Quest board")).toHaveClass("font-mono");
+    expect(screen.getAllByTestId("project-card")).toHaveLength(projectsData.length);
     for (const project of projectsData) {
       expect(screen.getByRole("link", { name: project.title })).toHaveAttribute(
         "href",
         `/projects/${project.slug}`,
       );
+      expect(
+        screen.getByRole("list", { name: `Technologies used in ${project.title}` }),
+      ).toBeInTheDocument();
     }
+  });
+
+  it("renders no project dates", async () => {
+    const { container } = render(await ProjectsPage());
+    expectNoProjectDates(container);
   });
 });
 
 describe("ProjectPage", () => {
   const project = projectsData[0];
 
-  it("shows the title, technologies and external links", async () => {
+  it("shows the status, title, summary, description, technologies and external links", async () => {
     render(await ProjectPage(slugProps(project.slug)));
     expect(screen.getByRole("heading", { level: 1, name: project.title })).toBeInTheDocument();
+    expect(screen.getByRole("article", { name: project.title })).toBeInTheDocument();
+    expect(
+      screen.getByText(project.endDate === null ? "Active quest" : "Quest complete"),
+    ).toBeInTheDocument();
+    expect(screen.getByText(project.summary)).toBeInTheDocument();
+    expect(screen.getByText(project.description)).toBeInTheDocument();
     const tech = screen.getByRole("list", { name: `Technologies used in ${project.title}` });
     expect(
       within(tech)
         .getAllByRole("listitem")
         .map((li) => li.textContent),
     ).toEqual(project.tech);
-    expect(screen.getByRole("link", { name: "View source code" })).toHaveAttribute(
-      "href",
-      project.links.repo,
-    );
-    expect(screen.getByRole("link", { name: "← All projects" })).toHaveAttribute(
-      "href",
-      "/projects",
-    );
+    for (const [name, href] of [
+      [/^View source code\b.*opens in a new tab/, project.links.repo],
+      [/^Visit live site\b.*opens in a new tab/, project.links.live],
+    ] as const) {
+      const link = screen.getByRole("link", { name });
+      expect(link).toHaveAttribute("href", href);
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    }
+    expect(screen.getByRole("link", { name: "All projects" })).toHaveAttribute("href", "/projects");
+  });
+
+  it("loads the decorative hero image eagerly with high priority", async () => {
+    render(await ProjectPage(slugProps(project.slug)));
+    const image = screen.getByTestId("project-hero-image");
+    expect(image).toHaveAttribute("alt", "");
+    expect(image).toHaveAttribute("loading", "eager");
+    expect(image).toHaveAttribute("fetchpriority", "high");
+  });
+
+  it.each(projectsData.map((p) => [p.slug]))("renders no project dates for %s", async (slug) => {
+    const { container } = render(await ProjectPage(slugProps(slug)));
+    expectNoProjectDates(container);
   });
 
   it("calls notFound() for an unknown slug", async () => {
@@ -151,6 +218,13 @@ describe("ProjectPage", () => {
     });
     expect(await generateMetadata(slugProps("nope"))).toEqual({});
   });
+
+  it.each(projectsData.map((p) => [p.slug]))(
+    "puts no dates in the metadata for %s",
+    async (slug) => {
+      expectNoProjectDates(JSON.stringify(await generateMetadata(slugProps(slug))));
+    },
+  );
 });
 
 describe("ExperiencePage", () => {

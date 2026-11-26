@@ -104,7 +104,7 @@ Glow marks what matters: the primary call to action, the hovered or focused card
 
 ### Motion
 
-- No 3D: no perspective tilts, WebGL scenes or rotating objects.
+- No 3D scenes, models or WebGL. The only perspective effect allowed is the subtle hover tilt on project cards (at most 6 degrees, fine pointer only, off under reduced motion).
 - Hovers and focus effects are snappy (about 150 ms, `ease-out`): border and glow changes, a 1 px press on buttons.
 - Use movement to draw attention, not as a constant: at most one orchestrated page-load moment and subtle background parallax, no fade-in on every section.
 - Under `prefers-reduced-motion: reduce` every animation is off or minimal (no movement, at most a short fade). `globals.css` has a baseline that makes every transition and animation finish instantly and turns off smooth scrolling; components add `motion-reduce:` utilities for transforms; JS-driven effects check `usePrefersReducedMotion()` from `src/lib/hooks/use-prefers-reduced-motion.ts` (it returns `true` on the server, so effects never flash on before the preference is known).

@@ -1,27 +1,34 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { Project } from "@/lib/schemas";
-import { formatDateRange } from "@/lib/format";
+import { Card } from "@/components/ui/Card";
 import { isSvgImage } from "@/lib/images";
+import type { PublicProject } from "@/lib/projects";
+import { ProjectStatusLabel } from "./ProjectStatusLabel";
 import { TechList } from "./TechList";
+import { TiltCard } from "./TiltCard";
 
 /** Props for {@link ProjectList}. */
 export interface ProjectListProps {
-  projects: readonly Project[];
+  /**
+   * Projects to show, already redacted with `toPublicProjects`, so no dates can be rendered
+   * (DESIGN.md "Content and privacy").
+   */
+  projects: readonly PublicProject[];
   /** Heading level for each project title, so the list fits the page outline. */
   headingLevel?: 2 | 3;
-  /**
-   * Shows each project's date range. Defaults to `true` for the Projects page until #7 redacts
-   * dates there; the home page passes `false` (no dates anywhere, see DESIGN.md).
-   */
-  showDates?: boolean;
 }
 
 /**
- * Projects as a stacked list: thumbnail, title linking to the detail page, optional dates,
- * summary and technologies.
+ * Projects as a grid of "completed quest" cards: 1 column on phones, 2 from 640 px, 3 from
+ * 1024 px. Each card shows a decorative image, a status label, the title, summary and
+ * technologies.
+ *
+ * The title link is stretched over the whole card (an `::after` overlay), so the card is one
+ * link with no nested links; keyboard focus draws the focus ring around the card and lights the
+ * same glow as hover. The card content is server-rendered; only the pointer tilt (`TiltCard`)
+ * runs on the client.
  */
-export function ProjectList({ projects, headingLevel = 2, showDates = true }: ProjectListProps) {
+export function ProjectList({ projects, headingLevel = 2 }: ProjectListProps) {
   const Heading = headingLevel === 2 ? "h2" : "h3";
 
   if (projects.length === 0) {
@@ -29,33 +36,45 @@ export function ProjectList({ projects, headingLevel = 2, showDates = true }: Pr
   }
 
   return (
-    <ul className="divide-y divide-line border-y border-line">
+    <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {projects.map((project) => (
-        <li key={project.slug} className="grid gap-5 py-8 sm:grid-cols-[14rem_1fr] sm:gap-8">
-          <Image
-            src={project.image}
-            alt=""
-            width={448}
-            height={252}
-            unoptimized={isSvgImage(project.image)}
-            className="aspect-video w-full rounded-sm border border-line object-cover"
-          />
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <Heading className="font-display text-xl font-semibold tracking-tight">
-                <Link href={`/projects/${project.slug}`} className="hover:text-accent">
+        <li key={project.slug}>
+          <TiltCard>
+            <Card
+              as="article"
+              interactive
+              className="group flex h-full flex-col gap-4 px-5 py-5 sm:px-5 sm:py-5"
+              data-testid="project-card"
+            >
+              <Image
+                src={project.image}
+                alt=""
+                width={640}
+                height={360}
+                unoptimized={isSvgImage(project.image)}
+                className="aspect-video w-full rounded-md border border-line object-cover"
+              />
+              <ProjectStatusLabel status={project.status} />
+              <Heading className="-mt-1 font-display text-xl leading-snug font-semibold tracking-tight">
+                <Link
+                  href={`/projects/${project.slug}`}
+                  className={
+                    "transition-colors duration-150 ease-out group-hover:text-glow " +
+                    "after:absolute after:inset-0 after:z-10 after:rounded-xl after:content-[''] " +
+                    "focus-visible:outline-none focus-visible:after:outline-2 " +
+                    "focus-visible:after:outline-offset-3 focus-visible:after:outline-neon " +
+                    "focus-visible:after:outline-solid motion-reduce:transition-none"
+                  }
+                >
                   {project.title}
                 </Link>
               </Heading>
-              {showDates && (
-                <p className="font-mono text-xs text-muted">
-                  {formatDateRange(project.startDate, project.endDate)}
-                </p>
-              )}
-            </div>
-            <p className="max-w-prose leading-relaxed text-muted">{project.summary}</p>
-            <TechList items={project.tech} label={`Technologies used in ${project.title}`} />
-          </div>
+              <p className="leading-relaxed text-muted">{project.summary}</p>
+              <div className="mt-auto pt-2">
+                <TechList items={project.tech} label={`Technologies used in ${project.title}`} />
+              </div>
+            </Card>
+          </TiltCard>
         </li>
       ))}
     </ul>

@@ -8,6 +8,7 @@ import { StatGrid } from "@/components/ui/StatGrid";
 import { StatTile } from "@/components/ui/StatTile";
 import { getRepository } from "@/lib/data";
 import { isSvgImage } from "@/lib/images";
+import { toPublicProjects } from "@/lib/projects";
 import { getHomeStats } from "@/lib/stats";
 
 /** The mochkai logo, which "boots up" in the hero. */
@@ -16,7 +17,8 @@ const LOGO_SRC = "/images/logo.svg";
 /**
  * Home page as a title screen: the logo powers on, a `Player 1` HUD label, the owner's name,
  * title and bio, a glowing "Press Start" CTA to the projects, secondary CTAs, and a scoreboard
- * computed from the content data. Featured projects follow below.
+ * computed from the content data. Featured projects follow below as completed-quest cards,
+ * redacted with `toPublicProjects` so no project dates reach the page.
  *
  * Every animation here is CSS only and starts from a visible state, so the hero is fully readable
  * without JavaScript and before the animations finish. Both are off under reduced motion.
@@ -112,7 +114,7 @@ export default async function HomePage() {
             All projects
           </Link>
         </div>
-        <ProjectList projects={featured} headingLevel={3} showDates={false} />
+        <ProjectList projects={toPublicProjects(featured)} headingLevel={3} />
       </section>
     </>
   );

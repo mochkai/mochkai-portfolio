@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import projectsData from "../src/data/projects.json";
 
 // Browser-free API checks: these use only the `request` fixture (APIRequestContext).
 
@@ -18,13 +19,28 @@ test.describe("API", () => {
     expect(Array.isArray(body.socials)).toBe(true);
   });
 
-  test("GET /api/projects returns projects newest first", async ({ request }) => {
+  test("GET /api/projects returns projects without any dates", async ({ request }) => {
     const res = await request.get("/api/projects");
     expect(res.status()).toBe(200);
-    const body: { slug: string; startDate: string }[] = await res.json();
+    const text = await res.text();
+    const body: Record<string, unknown>[] = JSON.parse(text);
     expect(body.length).toBeGreaterThan(0);
-    const starts = body.map((p) => p.startDate);
-    expect(starts).toEqual([...starts].sort().reverse());
+    // DESIGN.md "Content and privacy": project dates are redacted from the API (#7).
+    for (const project of body) {
+      expect(project).not.toHaveProperty("startDate");
+      expect(project).not.toHaveProperty("endDate");
+      expect(["complete", "active"]).toContain(project.status);
+    }
+    expect(text).not.toMatch(/\b(19|20)\d{2}-\d{2}\b/);
+  });
+
+  test("GET /api/projects keeps the newest-first order of projects.json", async ({ request }) => {
+    const body: { slug: string }[] = await (await request.get("/api/projects")).json();
+    // The API no longer exposes dates, so the expected order comes from the content data.
+    const expected = [...projectsData]
+      .sort((a, b) => b.startDate.localeCompare(a.startDate))
+      .map((p) => p.slug);
+    expect(body.map((p) => p.slug)).toEqual(expected);
   });
 
   test("GET /api/projects?featured=true|false filters", async ({ request }) => {
@@ -52,7 +68,12 @@ test.describe("API", () => {
     const [first]: { slug: string }[] = await (await request.get("/api/projects")).json();
     const res = await request.get(`/api/projects/${first.slug}`);
     expect(res.status()).toBe(200);
-    expect((await res.json()).slug).toBe(first.slug);
+    const text = await res.text();
+    const body = JSON.parse(text);
+    expect(body.slug).toBe(first.slug);
+    expect(body).not.toHaveProperty("startDate");
+    expect(body).not.toHaveProperty("endDate");
+    expect(text).not.toMatch(/\b(19|20)\d{2}-\d{2}\b/);
   });
 
   test("GET /api/projects/:slug returns 404 JSON for an unknown slug", async ({ request }) => {

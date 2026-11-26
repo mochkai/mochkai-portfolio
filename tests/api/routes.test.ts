@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import experienceData from "@/data/experience.json";
 import profileData from "@/data/profile.json";
 import projectsData from "@/data/projects.json";
+import { toPublicProject } from "@/lib/projects";
+import type { Project } from "@/lib/schemas";
 
 const BASE = "http://localhost:3000";
 const ORIGIN = "https://chat.example.com";
@@ -31,6 +33,17 @@ function req(path: string, { origin, method = "GET" }: { origin?: string; method
 /** Route context for the `[slug]` handler. */
 function slugCtx(slug: string) {
   return { params: Promise.resolve({ slug }) };
+}
+
+/** Every raw `YYYY-MM` project date in the content data. */
+const PROJECT_DATES = projectsData.flatMap((p) =>
+  [p.startDate, p.endDate].filter((d): d is string => d !== null),
+);
+
+/** Asserts that a response body carries no project date keys or values. */
+function expectNoProjectDates(text: string) {
+  expect(text).not.toMatch(/"(startDate|endDate)"/);
+  for (const date of PROJECT_DATES) expect(text).not.toContain(date);
 }
 
 const sortedSlugs = [...projectsData]
@@ -82,6 +95,21 @@ describe("GET /api/projects", () => {
     expect(body.map((p) => p.slug)).toEqual(sortedSlugs);
   });
 
+  it.each(["/api/projects", "/api/projects?featured=true", "/api/projects?featured=false"])(
+    "redacts every project date from %s",
+    async (path) => {
+      const { projects } = await loadRoutes();
+      const res = await projects.GET(req(path));
+      const text = await res.text();
+      expectNoProjectDates(text);
+      for (const item of JSON.parse(text) as Record<string, unknown>[]) {
+        expect(item).not.toHaveProperty("startDate");
+        expect(item).not.toHaveProperty("endDate");
+        expect(["complete", "active"]).toContain(item.status);
+      }
+    },
+  );
+
   it("filters with featured=true and featured=false", async () => {
     const { projects } = await loadRoutes();
     const featured = (await (await projects.GET(req("/api/projects?featured=true"))).json()) as {
@@ -122,7 +150,17 @@ describe("GET /api/projects/[slug]", () => {
     const slug = projectsData[0].slug;
     const res = await project.GET(req(`/api/projects/${slug}`), slugCtx(slug));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual(projectsData[0]);
+    expect(await res.json()).toEqual(toPublicProject(projectsData[0] as Project));
+  });
+
+  it.each(projectsData.map((p) => [p.slug]))("redacts the project dates for %s", async (slug) => {
+    const { project } = await loadRoutes();
+    const res = await project.GET(req(`/api/projects/${slug}`), slugCtx(slug));
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    expectNoProjectDates(text);
+    expect(JSON.parse(text)).not.toHaveProperty("startDate");
+    expect(JSON.parse(text)).not.toHaveProperty("endDate");
   });
 
   it("returns 404 JSON for an unknown slug", async () => {
