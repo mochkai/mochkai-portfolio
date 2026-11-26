@@ -58,6 +58,8 @@ export function makeProfile(overrides: Partial<Profile> = {}): Profile {
       { label: "LinkedIn", url: "https://www.linkedin.com/in/ada" },
     ],
     skills: [{ category: "Languages", items: ["TypeScript"] }],
+    characterClass: "Full-stack · Backend main",
+    currentlyLearning: ["LangGraph"],
     ...overrides,
   };
 }

@@ -58,6 +58,52 @@
   --inset-shadow-rune: inset 0 0 30px rgb(57 168 255 / 0.06);
   --text-shadow-glow: 0 0 18px rgb(57 168 255 / 0.55), 0 0 2px rgb(255 255 255 / 0.5);
   --text-shadow-glow-sm: 0 0 10px rgb(57 168 255 / 0.6);
+  --drop-shadow-glow: 0 0 18px rgb(57 168 255 / 0.5);
+
+  /*
+   * Home title screen. animate-boot: the logo flickers on and settles into its glow (1.1 s, once).
+   * It starts dimmed, never invisible, so nothing waits on it. animate-cta-pulse: a slow, gentle
+   * glow pulse on the "Press Start" CTA. Both are off under reduced motion (motion-reduce:).
+   */
+  --animate-boot: boot 1.1s ease-out backwards;
+  --animate-cta-pulse: cta-pulse 3s ease-in-out 1.2s infinite;
+
+  @keyframes boot {
+    0% {
+      opacity: 0.35;
+      filter: brightness(0.6);
+    }
+    18% {
+      opacity: 1;
+      filter: brightness(1.4) drop-shadow(0 0 24px rgb(57 168 255 / 0.8));
+    }
+    26% {
+      opacity: 0.5;
+      filter: brightness(0.8);
+    }
+    40% {
+      opacity: 1;
+      filter: brightness(1.2) drop-shadow(0 0 20px rgb(57 168 255 / 0.7));
+    }
+    50% {
+      opacity: 0.75;
+      filter: brightness(0.9);
+    }
+    100% {
+      opacity: 1;
+      filter: drop-shadow(0 0 18px rgb(57 168 255 / 0.5));
+    }
+  }
+
+  @keyframes cta-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 16px rgb(57 168 255 / 0.45);
+    }
+    50% {
+      box-shadow: 0 0 30px rgb(57 168 255 / 0.65);
+    }
+  }
 }
 
 @layer base {

@@ -14,5 +14,7 @@
     { "category": "Frontend", "items": ["React", "Next.js", "Tailwind CSS"] },
     { "category": "Backend", "items": ["Node.js", "REST APIs", "PostgreSQL"] },
     { "category": "Tooling", "items": ["Docker", "Git", "Vitest", "Playwright"] }
-  ]
+  ],
+  "characterClass": "Full-stack · Backend main",
+  "currentlyLearning": ["LangGraph"]
 }

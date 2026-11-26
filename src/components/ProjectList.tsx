@@ -10,13 +10,18 @@ export interface ProjectListProps {
   projects: readonly Project[];
   /** Heading level for each project title, so the list fits the page outline. */
   headingLevel?: 2 | 3;
+  /**
+   * Shows each project's date range. Defaults to `true` for the Projects page until #7 redacts
+   * dates there; the home page passes `false` (no dates anywhere, see DESIGN.md).
+   */
+  showDates?: boolean;
 }
 
 /**
- * Projects as a stacked list: thumbnail, title linking to the detail page, dates,
+ * Projects as a stacked list: thumbnail, title linking to the detail page, optional dates,
  * summary and technologies.
  */
-export function ProjectList({ projects, headingLevel = 2 }: ProjectListProps) {
+export function ProjectList({ projects, headingLevel = 2, showDates = true }: ProjectListProps) {
   const Heading = headingLevel === 2 ? "h2" : "h3";
 
   if (projects.length === 0) {
@@ -42,9 +47,11 @@ export function ProjectList({ projects, headingLevel = 2 }: ProjectListProps) {
                   {project.title}
                 </Link>
               </Heading>
-              <p className="font-mono text-xs text-muted">
-                {formatDateRange(project.startDate, project.endDate)}
-              </p>
+              {showDates && (
+                <p className="font-mono text-xs text-muted">
+                  {formatDateRange(project.startDate, project.endDate)}
+                </p>
+              )}
             </div>
             <p className="max-w-prose leading-relaxed text-muted">{project.summary}</p>
             <TechList items={project.tech} label={`Technologies used in ${project.title}`} />

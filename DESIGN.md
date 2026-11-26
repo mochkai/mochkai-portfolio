@@ -30,7 +30,10 @@ Navigation is a HUD-style bar. A thin scroll "boost meter" shows reading progres
 
 **No age signals anywhere on the site.** No total years of experience, no "years coding" stat, no years-per-skill stat, no career start year, no graduation years, no birth date. They are never rendered or exposed in pages, API responses, JSON-LD, metadata, alt text or stats. Every later issue must follow this rule.
 
-- Experience shows dates only for the 4 most recent companies. Older roles show no dates or durations, on the page and in `/api/experience`, and are not emphasised. The 4-company limit is a single constant in code (see the experience quest-log issue #8).
+- No dates (dates, date ranges or durations) are rendered or exposed anywhere: pages, API responses, metadata, JSON-LD.
+- Experience keeps a single `DATED_COMPANY_LIMIT` constant in code, currently `0` (see #8), so the owner can switch dates back on later for recent roles only.
+- Project dates are also redacted from pages and API (see #7).
+- Dates may remain in the JSON data for ordering.
 - Stat tiles use values derived from the content data (for example projects completed, distinct technologies, class/role, currently learning), never invented numbers.
 - Skills are a skill tree with owner-set ranks **Mastered / Proficient / Learning**, shown as 3 pips with a text label, plus "Used in N quests" (counted from the projects). Never percentage bars.
 

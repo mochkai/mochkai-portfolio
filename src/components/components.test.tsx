@@ -57,6 +57,13 @@ describe("ProjectList", () => {
     expect(screen.getByText("Does a thing.")).toBeInTheDocument();
   });
 
+  it("hides the date range when showDates is false", () => {
+    const project = makeProject({ startDate: "2024-03", endDate: null });
+    const { container } = render(<ProjectList projects={[project]} showDates={false} />);
+    expect(screen.queryByText("Mar 2024 – Present")).toBeNull();
+    expect(container.textContent).not.toMatch(/\b(19|20)\d{2}\b/);
+  });
+
   it("marks thumbnails as decorative", () => {
     const { container } = render(<ProjectList projects={[makeProject()]} />);
     const img = container.querySelector("img");

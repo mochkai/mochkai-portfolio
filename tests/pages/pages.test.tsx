@@ -35,9 +35,66 @@ describe("HomePage", () => {
         .map((p) => p.title)
         .sort(),
     );
-    expect(screen.getByRole("link", { name: "See all projects" })).toHaveAttribute(
+  });
+
+  it("is a title screen: logo, Player 1 label, one h1, bio and CTAs", async () => {
+    render(await HomePage());
+    const hero = screen.getByRole("region", { name: profileData.name });
+    expect(within(hero).getByTestId("hero-logo")).toHaveAttribute("alt", "");
+    expect(within(hero).getByTestId("hero-logo")).toHaveAttribute("fetchpriority", "high");
+    expect(within(hero).getByText(`Player 1 · ${profileData.title}`)).toHaveClass("font-mono");
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(within(hero).getByText(profileData.bio)).toBeInTheDocument();
+    expect(within(hero).getByRole("link", { name: "Press Start: view projects" })).toHaveAttribute(
       "href",
       "/projects",
+    );
+    expect(within(hero).getByRole("link", { name: "Read experience" })).toHaveAttribute(
+      "href",
+      "/experience",
+    );
+    expect(within(hero).getByRole("link", { name: "About me" })).toHaveAttribute("href", "/about");
+  });
+
+  it("shows a scoreboard computed from the content data", async () => {
+    render(await HomePage());
+    const grid = screen.getByLabelText("Player stats");
+    const terms = within(grid)
+      .getAllByRole("term")
+      .map((t) => t.textContent);
+    const values = within(grid)
+      .getAllByRole("definition")
+      .map((d) => d.textContent);
+    const technologies = new Set(
+      projectsData.flatMap((p) => p.tech.map((t) => t.trim().toLowerCase())),
+    );
+    expect(terms).toEqual(["Quests completed", "Skills unlocked", "Class", "Currently learning"]);
+    expect(values).toEqual([
+      String(projectsData.length),
+      String(technologies.size),
+      profileData.characterClass,
+      profileData.currentlyLearning.join(" · "),
+    ]);
+  });
+
+  // DESIGN.md: no age signals and no dates anywhere, including the featured projects.
+  it("shows no age signals and no dates anywhere on the page", async () => {
+    const { container } = render(await HomePage());
+    const text = container.textContent ?? "";
+    expect(text).not.toMatch(/\byears?\b|\bsince\b|\bpresent\b/i);
+    expect(text).not.toMatch(/\b(19|20)\d{2}\b/);
+    expect(text).not.toMatch(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w* \d/i);
+  });
+
+  it("turns the boot-up and pulse animations off under reduced motion", async () => {
+    render(await HomePage());
+    expect(screen.getByTestId("hero-logo")).toHaveClass(
+      "animate-boot",
+      "motion-reduce:animate-none",
+    );
+    expect(screen.getByTestId("press-start")).toHaveClass(
+      "animate-cta-pulse",
+      "motion-reduce:animate-none",
     );
   });
 });
