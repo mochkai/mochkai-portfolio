@@ -19,3 +19,20 @@ export function closeToast(
   const target = returnFocus.current;
   if (hadFocus && target?.isConnected) target.focus();
 }
+
+/**
+ * Whether an Escape press belongs to something else, so a toast must not close on it: another
+ * handler already claimed it (`defaultPrevented`), or a modal dialog (such as the command
+ * palette) is open and the press closes that instead.
+ *
+ * @param event - The Escape key press.
+ */
+export function isEscapeClaimed(event: Pick<KeyboardEvent, "defaultPrevented">): boolean {
+  if (event.defaultPrevented) return true;
+  try {
+    return document.querySelector("dialog:modal") !== null;
+  } catch {
+    // Engines without `:modal`: no modal dialog can be detected.
+    return false;
+  }
+}

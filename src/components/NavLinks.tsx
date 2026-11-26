@@ -30,8 +30,10 @@ const TRANSITION =
   "motion-safe:transition-[color,border-color,background-color,box-shadow,text-shadow] motion-safe:duration-150 motion-safe:ease-out motion-reduce:transition-none";
 
 /**
- * Primary navigation as world-map destinations: each link has a rune node marker, joined to
- * the previous one by a dashed path from `sm` up. On phones the links share one row
+ * Primary navigation as world-map destinations: from `lg` up each link has a rune node marker,
+ * joined to the previous one by a dashed path. Below `lg` the markers and paths are hidden and
+ * the padding is tighter, so the name, rune counter and palette button keep room on tablets
+ * (640 to 1023 px). On phones the links share one row
  * (`grid-flow-col`, so any number of items stays on one line; each column is as wide as its
  * label plus an equal share of the spare width) with 44 px touch targets; the node markers are
  * hidden there to make room, and the current page keeps its fill and underline bar.
@@ -52,14 +54,14 @@ export function NavLinks({ items }: NavLinksProps) {
             {index > 0 && (
               <span
                 aria-hidden="true"
-                className="hidden w-5 border-t border-dashed border-line sm:block"
+                className="hidden w-5 border-t border-dashed border-line lg:block"
               />
             )}
             <Link
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cx(
-                "group relative flex min-h-11 w-full items-center justify-center gap-2 rounded-sm px-1.5 font-display font-medium sm:w-auto sm:px-3",
+                "group relative flex min-h-11 w-full items-center justify-center gap-2 rounded-sm px-1.5 font-display font-medium sm:w-auto lg:px-3",
                 TRANSITION,
                 active
                   ? "bg-accent-soft text-foreground text-shadow-glow-sm"
@@ -69,7 +71,7 @@ export function NavLinks({ items }: NavLinksProps) {
               <span
                 aria-hidden="true"
                 className={cx(
-                  "size-2 shrink-0 rotate-45 border max-sm:hidden",
+                  "size-2 shrink-0 rotate-45 border max-lg:hidden",
                   TRANSITION,
                   active
                     ? "border-neon bg-neon shadow-glow-sm"

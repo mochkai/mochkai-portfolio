@@ -5,7 +5,8 @@ import { COLLECTIBLE_COUNT, nextCollectible } from "@/lib/collectibles";
 import { useCollectibleProgress } from "@/lib/hooks/use-collectible-progress";
 
 /**
- * The HUD rune counter in the site header (`RUNES 2/5`). Hidden until the first shard is found,
+ * The HUD rune counter in the site header (`RUNES 2/5`; compact `2/5` with the rune icon below
+ * 640 px, so the name, counter and palette button share one row). Hidden until the first shard is found,
  * so visitors who never find one never see it; it also renders nothing on the server and during
  * hydration (the progress store's server snapshot is empty), so there is no mismatch.
  *
@@ -25,7 +26,7 @@ export function CollectibleCounter() {
     >
       <CollectibleRune filled className="size-3.5 text-neon" />
       <span aria-hidden="true">
-        Runes{" "}
+        <span className="max-sm:hidden">Runes </span>
         <span className="tabular-nums">
           {found.length}/{COLLECTIBLE_COUNT}
         </span>
