@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import ErrorPage from "@/app/error";
 import GlobalError from "@/app/global-error";
 import NotFound from "@/app/not-found";
+import { toPublicProject, toPublicProjects } from "@/lib/projects";
 import { makeProject, projectFixtures } from "../../tests/fixtures";
 import { BoostMeter } from "./BoostMeter";
 import { NavLinks } from "./NavLinks";
@@ -20,11 +21,14 @@ afterEach(() => {
 });
 
 describe("ProjectList", () => {
-  it("renders one list item per project with a title link to its detail page", () => {
-    render(<ProjectList projects={projectFixtures} />);
+  const publicFixtures = toPublicProjects(projectFixtures);
+
+  it("renders one card per project whose title link goes to its detail page", () => {
+    render(<ProjectList projects={publicFixtures} />);
     const headings = screen.getAllByRole("heading", { level: 2 });
     expect(headings.map((h) => h.textContent)).toEqual(["Beta", "Alpha", "Gamma"]);
-    for (const project of projectFixtures) {
+    expect(screen.getAllByTestId("project-card")).toHaveLength(publicFixtures.length);
+    for (const project of publicFixtures) {
       expect(screen.getByRole("link", { name: project.title })).toHaveAttribute(
         "href",
         `/projects/${project.slug}`,
@@ -32,20 +36,41 @@ describe("ProjectList", () => {
     }
   });
 
+  it("makes each card a single stretched link, with no nested links", () => {
+    render(<ProjectList projects={publicFixtures} />);
+    for (const card of screen.getAllByTestId("project-card")) {
+      const links = within(card).getAllByRole("link");
+      expect(links).toHaveLength(1);
+      // The ::after overlay covers the card; focus draws the ring on it instead of the text.
+      expect(links[0]).toHaveClass(
+        "after:absolute",
+        "after:inset-0",
+        "focus-visible:after:outline-neon",
+      );
+      // The card glows on hover and focus-within.
+      expect(card).toHaveAttribute("data-interactive", "true");
+      expect(card).toHaveClass("focus-within:shadow-glow", "hover:shadow-glow");
+    }
+  });
+
+  it("lays the cards out as a responsive grid wrapped in the pointer tilt", () => {
+    const { container } = render(<ProjectList projects={publicFixtures} />);
+    expect(container.querySelector("ul")).toHaveClass("grid", "sm:grid-cols-2", "lg:grid-cols-3");
+    expect(screen.getAllByTestId("tilt-card")).toHaveLength(publicFixtures.length);
+  });
+
   it("uses h3 headings when asked", () => {
-    render(<ProjectList projects={[makeProject({ title: "Only" })]} headingLevel={3} />);
+    render(
+      <ProjectList projects={[toPublicProject(makeProject({ title: "Only" }))]} headingLevel={3} />,
+    );
     expect(screen.getByRole("heading", { level: 3, name: "Only" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { level: 2 })).toBeNull();
   });
 
-  it("labels each project's technologies and shows its date range and summary", () => {
-    const project = makeProject({
-      title: "Labelled",
-      tech: ["Rust", "Wasm"],
-      summary: "Does a thing.",
-      startDate: "2024-03",
-      endDate: null,
-    });
+  it("labels each project's technologies and shows its status and summary", () => {
+    const project = toPublicProject(
+      makeProject({ title: "Labelled", tech: ["Rust", "Wasm"], summary: "Does a thing." }),
+    );
     render(<ProjectList projects={[project]} />);
     const tech = screen.getByRole("list", { name: "Technologies used in Labelled" });
     expect(
@@ -53,19 +78,32 @@ describe("ProjectList", () => {
         .getAllByRole("listitem")
         .map((li) => li.textContent),
     ).toEqual(["Rust", "Wasm"]);
-    expect(screen.getByText("Mar 2024 – Present")).toBeInTheDocument();
+    expect(screen.getByText("Quest complete")).toBeInTheDocument();
     expect(screen.getByText("Does a thing.")).toBeInTheDocument();
   });
 
-  it("hides the date range when showDates is false", () => {
-    const project = makeProject({ startDate: "2024-03", endDate: null });
-    const { container } = render(<ProjectList projects={[project]} showDates={false} />);
-    expect(screen.queryByText("Mar 2024 – Present")).toBeNull();
-    expect(container.textContent).not.toMatch(/\b(19|20)\d{2}\b/);
+  it("shows an open-ended project as an active quest", () => {
+    render(<ProjectList projects={[toPublicProject(makeProject({ endDate: null }))]} />);
+    expect(screen.getByText("Active quest")).toBeInTheDocument();
   });
 
-  it("marks thumbnails as decorative", () => {
-    const { container } = render(<ProjectList projects={[makeProject()]} />);
+  it("never renders a date, date range or duration", () => {
+    const projects = toPublicProjects([
+      makeProject({ slug: "a", startDate: "2024-03", endDate: null }),
+      makeProject({ slug: "b", startDate: "2021-07", endDate: "2022-02" }),
+    ]);
+    const { container } = render(<ProjectList projects={projects} />);
+    // Raw and formatted dates on the HTML; bare years only on the text (image URLs have numbers).
+    const html = container.innerHTML;
+    const text = container.textContent ?? "";
+    expect(html).not.toMatch(/\b(19|20)\d{2}-(0[1-9]|1[0-2])\b/);
+    expect(html).not.toMatch(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w* \d/i);
+    expect(text).not.toMatch(/\b(19|20)\d{2}\b/);
+    expect(text).not.toMatch(/\bpresent\b|\b\d+ (yrs?|years?|mos?|months?)\b/i);
+  });
+
+  it("marks images as decorative", () => {
+    const { container } = render(<ProjectList projects={[toPublicProject(makeProject())]} />);
     const img = container.querySelector("img");
     expect(img).not.toBeNull();
     expect(img).toHaveAttribute("alt", "");
@@ -310,6 +348,16 @@ describe("PageHeader", () => {
     rerender(<PageHeader title="Bare" />);
     expect(screen.getByRole("heading", { level: 1, name: "Bare" })).toBeInTheDocument();
     expect(screen.queryByText("Intro text")).toBeNull();
+    expect(screen.queryByTestId("label-rune")).toBeNull();
+  });
+
+  it("shows an optional HUD label above the title", () => {
+    render(<PageHeader title="Projects" label="Quest board" />);
+    const label = screen.getByText("Quest board");
+    expect(label).toHaveClass("font-mono", "uppercase");
+    expect(label.compareDocumentPosition(screen.getByRole("heading", { level: 1 }))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 });
 

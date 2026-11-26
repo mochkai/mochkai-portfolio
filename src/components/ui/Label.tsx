@@ -2,7 +2,7 @@ import type { HTMLAttributes } from "react";
 import { cx } from "@/lib/cx";
 
 /** Elements a {@link Label} can render as. */
-export type LabelElement = "span" | "p" | "div" | "dt";
+export type LabelElement = "span" | "p" | "div" | "dt" | "h2" | "h3";
 
 /** Props for {@link Label}. */
 export interface LabelProps extends HTMLAttributes<HTMLElement> {

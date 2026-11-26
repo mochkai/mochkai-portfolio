@@ -84,13 +84,13 @@ Image rules: images must be site paths under `public/` (for example `/images/ava
 
 A read-only JSON API for other projects. All endpoints use `GET` (and `OPTIONS` for preflight).
 
-| Endpoint               | Returns                                                           |
-| ---------------------- | ----------------------------------------------------------------- |
-| `/api/health`          | `{ "status": "ok" }` (liveness check)                             |
-| `/api/profile`         | The profile object                                                |
-| `/api/projects`        | Array of projects, newest first. Optional `?featured=true\|false` |
-| `/api/projects/[slug]` | A single project                                                  |
-| `/api/experience`      | Array of experience entries, most recent first                    |
+| Endpoint               | Returns                                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| `/api/health`          | `{ "status": "ok" }` (liveness check)                                                                  |
+| `/api/profile`         | The profile object                                                                                     |
+| `/api/projects`        | Array of projects, newest first, without dates (each has a `status`). Optional `?featured=true\|false` |
+| `/api/projects/[slug]` | A single project, without dates                                                                        |
+| `/api/experience`      | Array of experience entries, most recent first                                                         |
 
 Errors are JSON `{ "error": "<message>" }`:
 

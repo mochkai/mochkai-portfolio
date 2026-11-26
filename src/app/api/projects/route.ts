@@ -1,9 +1,10 @@
 import type { NextRequest } from "next/server";
 import { getRepository } from "@/lib/data";
 import { jsonError, jsonResponse, preflightResponse, withApiErrorHandling } from "@/lib/http/api";
+import { toPublicProjects } from "@/lib/projects";
 
 /**
- * Lists projects, newest first.
+ * Lists projects, newest first, redacted with `toPublicProjects` (no `startDate`/`endDate`).
  * Optional query `?featured=true|false` filters by the featured flag.
  */
 export const GET = withApiErrorHandling(async (request: NextRequest): Promise<Response> => {
@@ -15,7 +16,7 @@ export const GET = withApiErrorHandling(async (request: NextRequest): Promise<Re
   const projects = await getRepository().getProjects(
     featuredParam === null ? {} : { featured: featuredParam === "true" },
   );
-  return jsonResponse(request, projects);
+  return jsonResponse(request, toPublicProjects(projects));
 });
 
 /** CORS preflight. */
