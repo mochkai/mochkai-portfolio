@@ -338,6 +338,67 @@ test.describe("pages", () => {
     }
   });
 
+  test("experience chapters: latest open, others expand with mouse and keyboard", async ({
+    page,
+  }) => {
+    await page.goto("/experience");
+    const chapters = page.getByTestId("quest-chapter");
+    const count = await chapters.count();
+    expect(count).toBeGreaterThan(1);
+    await expect(chapters.first()).toHaveAttribute("open", "");
+    for (let i = 1; i < count; i++) await expect(chapters.nth(i)).not.toHaveAttribute("open");
+    await expect(chapters.first().getByText("Chapter 01")).toBeVisible();
+
+    const second = chapters.nth(1);
+    const summary = second.locator("summary");
+    const body = second.getByTestId("chapter-body");
+    await expect(body).toBeHidden();
+    await summary.click();
+    await expect(second).toHaveAttribute("open", "");
+    await expect(body).toBeVisible();
+    await summary.click();
+    await expect(second).not.toHaveAttribute("open");
+
+    await summary.focus();
+    await page.keyboard.press("Enter");
+    await expect(second).toHaveAttribute("open", "");
+    await page.keyboard.press("Space");
+    await expect(second).not.toHaveAttribute("open");
+  });
+
+  test("experience page shows no dates (DATED_COMPANY_LIMIT is 0)", async ({ page, request }) => {
+    const html = await (await request.get("/experience")).text();
+    expect(html).not.toMatch(/startDate|endDate/);
+    expect(html).not.toMatch(/\b(19|20)\d{2}-\d{2}\b/);
+    await page.goto("/experience");
+    const text = await page.getByRole("main").innerText();
+    expect(text).not.toMatch(/\b(19|20)\d{2}\b|\bpresent\b/i);
+  });
+
+  test("experience chapter expands and collapses with a touch tap", async ({ browser }) => {
+    const context = await browser.newContext({ hasTouch: true, isMobile: true });
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto("/experience");
+    const second = page.getByTestId("quest-chapter").nth(1);
+    await second.locator("summary").tap();
+    await expect(second).toHaveAttribute("open", "");
+    await expect(second.getByTestId("chapter-body")).toBeVisible();
+    await second.locator("summary").tap();
+    await expect(second).not.toHaveAttribute("open");
+    await context.close();
+  });
+
+  test("experience reveal and marker animations are off under reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/experience");
+    const second = page.getByTestId("quest-chapter").nth(1);
+    await second.locator("summary").click();
+    const body = second.getByTestId("chapter-body");
+    await expect(body).toHaveCSS("animation-name", "none");
+    await expect(second.getByTestId("chapter-marker")).toHaveCSS("transition-property", "none");
+  });
+
   test("about page renders skills and contact links", async ({ page }) => {
     await page.goto("/about");
     await expect(page.getByRole("heading", { level: 1, name: "About" })).toBeVisible();

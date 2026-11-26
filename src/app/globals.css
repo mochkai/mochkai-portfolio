@@ -68,6 +68,12 @@
   --animate-boot: boot 1.1s ease-out backwards;
   --animate-cta-pulse: cta-pulse 3s ease-in-out 1.2s infinite;
 
+  /*
+   * Experience quest log. animate-chapter-reveal: an opened chapter's body fades in and settles
+   * 4 px into place (200 ms, once per open). Off under reduced motion (motion-reduce:).
+   */
+  --animate-chapter-reveal: chapter-reveal 200ms ease-out;
+
   @keyframes boot {
     0% {
       opacity: 0.35;
@@ -92,6 +98,17 @@
     100% {
       opacity: 1;
       filter: drop-shadow(0 0 18px rgb(57 168 255 / 0.5));
+    }
+  }
+
+  @keyframes chapter-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 

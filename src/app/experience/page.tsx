@@ -1,53 +1,45 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/PageHeader";
-import { TechList } from "@/components/TechList";
+import { QuestChapter } from "@/components/QuestChapter";
 import { getRepository } from "@/lib/data";
-import { formatDateRange } from "@/lib/format";
+import { DATED_COMPANY_LIMIT, toPublicExperience } from "@/lib/experience";
 
 export const metadata: Metadata = {
   title: "Experience",
   description: "Where I have worked and what I did there.",
 };
 
-/** Work history as a vertical timeline, most recent role first. */
+/**
+ * Work history as a quest log: a glowing rune line with one expandable chapter per role, most
+ * recent first and numbered from the newest (`Chapter 01` is the latest role, which starts
+ * open). Only redacted entries ({@link toPublicExperience}) are rendered, so dates outside the
+ * {@link DATED_COMPANY_LIMIT} never reach the HTML or the RSC payload.
+ */
 export default async function ExperiencePage() {
-  const experience = await getRepository().getExperience();
+  const experience = toPublicExperience(await getRepository().getExperience(), DATED_COMPANY_LIMIT);
 
   return (
     <>
-      <PageHeader title="Experience">
+      <PageHeader title="Experience" label="Quest log">
         <p>Where I have worked and what I did there, most recent first.</p>
       </PageHeader>
 
       {experience.length === 0 ? (
         <p className="text-muted">No experience entries published yet.</p>
       ) : (
-        <ol className="relative max-w-3xl border-l border-line">
-          {experience.map((entry) => (
-            <li key={entry.id} className="relative pb-12 pl-8 last:pb-0">
-              {/* Timeline marker sitting on the vertical rule. */}
-              <span
-                aria-hidden="true"
-                className="absolute top-2 -left-[5px] size-[9px] rounded-full bg-accent"
-              />
-              <p className="font-mono text-xs text-muted">
-                {formatDateRange(entry.startDate, entry.endDate)}
-              </p>
-              <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
-                {entry.role}, {entry.company}
-              </h2>
-              <p className="text-sm text-muted">{entry.location}</p>
-              {entry.highlights.length > 0 && (
-                <ul className="mt-4 list-disc space-y-2 pl-5 leading-relaxed marker:text-muted">
-                  {entry.highlights.map((highlight) => (
-                    <li key={highlight}>{highlight}</li>
-                  ))}
-                </ul>
-              )}
-              <div className="mt-4">
-                <TechList items={entry.tech} label={`Technologies used at ${entry.company}`} />
-              </div>
-            </li>
+        // The rune line is the list's decorative ::before (a span is not allowed inside <ol>): a
+        // glowing rail behind the chapter nodes that fades out after the oldest role.
+        <ol
+          data-testid="quest-log"
+          className="relative max-w-3xl space-y-6 before:pointer-events-none before:absolute before:top-2 before:bottom-0 before:left-[11px] before:w-0.5 before:rounded-full before:bg-linear-to-b before:from-neon before:via-brand/70 before:to-transparent before:shadow-glow-sm before:content-['']"
+        >
+          {experience.map((entry, index) => (
+            <QuestChapter
+              key={entry.id}
+              entry={entry}
+              chapter={index + 1}
+              defaultOpen={index === 0}
+            />
           ))}
         </ol>
       )}

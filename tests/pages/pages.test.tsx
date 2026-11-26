@@ -236,6 +236,19 @@ describe("ExperiencePage", () => {
       expect(headings).toContain(`${entry.role}, ${entry.company}`);
     }
   });
+
+  // DATED_COMPANY_LIMIT is 0: no experience dates on the page (DESIGN.md "Content and privacy").
+  it("renders no experience dates with the real content data", async () => {
+    const { container } = render(await ExperiencePage());
+    const html = container.innerHTML;
+    for (const entry of experienceData) {
+      const months = [entry.startDate, entry.endDate].filter((d): d is string => d !== null);
+      for (const value of [...months, ...months.map(formatMonth)]) {
+        expect(html).not.toContain(value);
+      }
+    }
+    expect(container.textContent).not.toMatch(/\b(19|20)\d{2}\b|\bpresent\b/i);
+  });
 });
 
 describe("AboutPage", () => {

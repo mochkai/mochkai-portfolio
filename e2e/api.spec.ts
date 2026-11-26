@@ -90,6 +90,18 @@ test.describe("API", () => {
     expect(body.length).toBeGreaterThan(0);
   });
 
+  test("GET /api/experience returns no dates (DATED_COMPANY_LIMIT is 0)", async ({ request }) => {
+    const res = await request.get("/api/experience");
+    const text = await res.text();
+    const body: Record<string, unknown>[] = JSON.parse(text);
+    for (const entry of body) {
+      expect(entry).not.toHaveProperty("startDate");
+      expect(entry).not.toHaveProperty("endDate");
+      expect(typeof entry.current).toBe("boolean");
+    }
+    expect(text).not.toMatch(/\b(19|20)\d{2}-\d{2}\b/);
+  });
+
   test("cross-origin requests get no Allow-Origin with the default config", async ({ request }) => {
     // The E2E server is started without CORS_ALLOWED_ORIGINS, so no origin is allowed.
     const res = await request.get("/api/profile", {

@@ -15,14 +15,24 @@ export interface CardProps extends HTMLAttributes<HTMLElement> {
   interactive?: boolean;
 }
 
-/** Panel, rune line and inner light. The rune line is a decorative `::before`, invisible to AT. */
-const BASE =
-  "relative rounded-xl border border-line bg-surface p-6 inset-shadow-rune sm:p-7 " +
+/**
+ * Panel, rune line and inner light, without padding. The rune line is a decorative `::before`,
+ * invisible to AT. Exported for surfaces that cannot be a {@link Card} element, such as a
+ * `<details>` disclosure whose `<summary>` must fill the panel edge to edge.
+ */
+export const CARD_SURFACE =
+  "relative rounded-xl border border-line bg-surface inset-shadow-rune " +
   "before:pointer-events-none before:absolute before:inset-2 before:rounded-lg " +
   "before:border before:border-dashed before:border-neon/15 before:content-['']";
 
-/** Hover and focus-within glow, 150 ms, no transition under reduced motion. */
-const INTERACTIVE =
+/** {@link CARD_SURFACE} plus the default padding. */
+const BASE = `${CARD_SURFACE} p-6 sm:p-7`;
+
+/**
+ * Hover and focus-within glow, 150 ms, no transition under reduced motion. Exported with
+ * {@link CARD_SURFACE} for interactive surfaces that are not a {@link Card}.
+ */
+export const CARD_INTERACTIVE =
   "transition-[border-color,box-shadow] duration-150 ease-out motion-reduce:transition-none " +
   "hover:border-neon/60 hover:shadow-glow focus-within:border-neon/60 focus-within:shadow-glow";
 
@@ -31,6 +41,6 @@ const INTERACTIVE =
  * for grouped content (projects, roles, stats).
  */
 export function Card({ as: Element = "div", interactive = false, className, ...props }: CardProps) {
-  const classes = cx(BASE, interactive && INTERACTIVE, className);
+  const classes = cx(BASE, interactive && CARD_INTERACTIVE, className);
   return <Element className={classes} data-interactive={interactive || undefined} {...props} />;
 }

@@ -6,6 +6,7 @@ import profileData from "@/data/profile.json";
 import projectsData from "@/data/projects.json";
 import { toPublicProject } from "@/lib/projects";
 import type { Project } from "@/lib/schemas";
+import { DATED_AT_FOUR, experienceFixtures } from "../fixtures";
 
 const BASE = "http://localhost:3000";
 const ORIGIN = "https://chat.example.com";
@@ -75,14 +76,85 @@ describe("GET /api/profile", () => {
 });
 
 describe("GET /api/experience", () => {
-  it("returns experience most recent first", async () => {
+  it("returns every entry from the content data, in order, with no dates (limit 0)", async () => {
     const { experience } = await loadRoutes();
     const res = await experience.GET(req("/api/experience"));
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { id: string; startDate: string }[];
-    expect(body).toHaveLength(experienceData.length);
-    const starts = body.map((e) => e.startDate);
-    expect(starts).toEqual([...starts].sort().reverse());
+    const text = await res.text();
+    const body = JSON.parse(text) as Record<string, unknown>[];
+    expect(body.map((e) => e.id)).toEqual(experienceData.map((e) => e.id));
+    for (const entry of body) {
+      expect(entry).not.toHaveProperty("startDate");
+      expect(entry).not.toHaveProperty("endDate");
+      expect(typeof entry.current).toBe("boolean");
+    }
+    expect(text).not.toMatch(/"(startDate|endDate)"/);
+    for (const entry of experienceData) {
+      for (const date of [entry.startDate, entry.endDate]) {
+        if (date) expect(text).not.toContain(date);
+      }
+    }
+  });
+
+  describe("with the fixture repository", () => {
+    /**
+     * Loads the experience route with the 8-entry fixture repository and, when given, a different
+     * `DATED_COMPANY_LIMIT` (the route passes the constant explicitly, so mocking it takes effect).
+     */
+    async function loadExperienceRoute(limit?: number) {
+      vi.resetModules();
+      vi.doMock("@/lib/data", () => ({
+        getRepository: () => ({ getExperience: async () => experienceFixtures }),
+      }));
+      if (limit !== undefined) {
+        vi.doMock("@/lib/experience", async (importOriginal) => ({
+          ...(await importOriginal<typeof import("@/lib/experience")>()),
+          DATED_COMPANY_LIMIT: limit,
+        }));
+      }
+      return import("@/app/api/experience/route");
+    }
+
+    /** GETs `/api/experience` and returns the raw body and the parsed entries. */
+    async function fetchExperience(limit?: number) {
+      const route = await loadExperienceRoute(limit);
+      const res = await route.GET(req("/api/experience"));
+      expect(res.status).toBe(200);
+      const text = await res.text();
+      return { text, body: JSON.parse(text) as Record<string, unknown>[] };
+    }
+
+    afterEach(() => {
+      vi.doUnmock("@/lib/data");
+      vi.doUnmock("@/lib/experience");
+    });
+
+    it("returns all entries in order with no date keys or values (limit 0)", async () => {
+      const { text, body } = await fetchExperience();
+      expect(body.map((e) => e.id)).toEqual(experienceFixtures.map((e) => e.id));
+      for (const entry of body) {
+        expect(entry).not.toHaveProperty("startDate");
+        expect(entry).not.toHaveProperty("endDate");
+      }
+      expect(text).not.toMatch(/\b(19|20)\d{2}-\d{2}\b/);
+      expect(body[0].current).toBe(true);
+    });
+
+    it("dates only the 4 most recent companies with a limit of 4", async () => {
+      const { text, body } = await fetchExperience(4);
+      expect(body.map((e) => e.id)).toEqual(experienceFixtures.map((e) => e.id));
+      for (const [index, entry] of body.entries()) {
+        const source = experienceFixtures[index];
+        if (DATED_AT_FOUR.includes(source.id)) {
+          expect(entry).toMatchObject({ startDate: source.startDate, endDate: source.endDate });
+        } else {
+          expect(entry).not.toHaveProperty("startDate");
+          expect(entry).not.toHaveProperty("endDate");
+          expect(text).not.toContain(source.startDate);
+          if (source.endDate) expect(text).not.toContain(source.endDate);
+        }
+      }
+    });
   });
 });
 
