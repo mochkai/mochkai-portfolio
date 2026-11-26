@@ -3,11 +3,17 @@ import { cx } from "@/lib/cx";
 /** Visual variants shared by {@link Button} and {@link ButtonLink}. */
 export type ButtonVariant = "primary" | "secondary" | "ghost";
 
-/** Layout, type and motion shared by every variant. Hover/press effects last 150 ms. */
+/**
+ * Layout, type and motion shared by every variant. Hover/press effects last 150 ms. The
+ * transition and the 1 px press exist only under `motion-safe:` (never a `motion-reduce:`
+ * override racing a higher-specificity variant); `motion-reduce:transition-none` makes the
+ * reduced state explicit.
+ */
 const BASE =
   "inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 font-display font-semibold " +
-  "transition-[background-color,border-color,box-shadow,color,transform] duration-150 ease-out " +
-  "active:translate-y-px motion-reduce:transition-none motion-reduce:active:translate-y-0 " +
+  "motion-safe:transition-[background-color,border-color,box-shadow,color,transform] " +
+  "motion-safe:duration-150 motion-safe:ease-out motion-safe:active:translate-y-px " +
+  "motion-reduce:transition-none " +
   "disabled:pointer-events-none disabled:opacity-50";
 
 /** Per-variant colors. Text pairs are listed with their contrast ratios in DESIGN.md. */

@@ -75,7 +75,7 @@ export function BoostMeter() {
           "h-full origin-left bg-linear-to-r from-brand via-neon to-glow shadow-glow-sm",
           reducedMotion
             ? "transition-none"
-            : "transition-transform duration-150 ease-out motion-reduce:transition-none",
+            : "motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out motion-reduce:transition-none",
         )}
       />
     </div>

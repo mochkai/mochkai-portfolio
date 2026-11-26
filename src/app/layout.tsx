@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { ArcaneBackground } from "@/components/ArcaneBackground";
 import { BoostMeter } from "@/components/BoostMeter";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -38,7 +39,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * Root layout: fonts, skip link, boost meter, HUD header, main landmark and footer.
+ * Root layout: fonts, the decorative Arcane backdrop (fixed behind everything), skip link, boost
+ * meter, HUD header, main landmark and footer.
  * The header is sticky from `sm` up, so `main` gets a matching scroll margin for the skip link.
  */
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -50,6 +52,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${displayFont.variable} ${bodyFont.variable} ${codeFont.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
+        <ArcaneBackground />
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-60 focus:rounded-sm focus:border focus:border-neon focus:bg-surface-raised focus:px-4 focus:py-2 focus:font-display focus:font-medium focus:text-foreground focus:shadow-glow"

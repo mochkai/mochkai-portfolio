@@ -25,9 +25,9 @@ function isActive(pathname: string, href: string): boolean {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** Snappy (150 ms) hover/active changes; off under reduced motion. */
+/** Snappy (150 ms) hover/active changes, under `motion-safe:` only; none under reduced motion. */
 const TRANSITION =
-  "transition-[color,border-color,background-color,box-shadow,text-shadow] duration-150 ease-out motion-reduce:transition-none";
+  "motion-safe:transition-[color,border-color,background-color,box-shadow,text-shadow] motion-safe:duration-150 motion-safe:ease-out motion-reduce:transition-none";
 
 /**
  * Primary navigation as world-map destinations: each link has a rune node marker, joined to

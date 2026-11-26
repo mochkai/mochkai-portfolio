@@ -167,16 +167,24 @@ describe("HomePage", () => {
     );
   });
 
-  it("turns the boot-up and pulse animations off under reduced motion", async () => {
+  it("runs the boot-up and pulse animations only under motion-safe", async () => {
     render(await HomePage());
-    expect(screen.getByTestId("hero-logo")).toHaveClass(
-      "animate-boot",
-      "motion-reduce:animate-none",
-    );
-    expect(screen.getByTestId("press-start")).toHaveClass(
-      "animate-cta-pulse",
-      "motion-reduce:animate-none",
-    );
+    const logo = screen.getByTestId("hero-logo");
+    const cta = screen.getByTestId("press-start");
+    expect(logo).toHaveClass("motion-safe:animate-boot");
+    expect(cta).toHaveClass("motion-safe:animate-cta-pulse", "motion-safe:hover:animate-none");
+    // No unconditional animation that a motion-reduce: variant would have to override.
+    for (const element of [logo, cta]) {
+      expect(element.className).not.toMatch(/(^|\s)(hover:)?animate-/);
+    }
+  });
+
+  it("puts a decorative parallax rune circuit behind the hero", async () => {
+    render(await HomePage());
+    const layer = screen.getByTestId("parallax-layer");
+    expect(layer).toHaveAttribute("aria-hidden", "true");
+    expect(layer).toHaveClass("pointer-events-none", "absolute");
+    expect(layer.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 });
 

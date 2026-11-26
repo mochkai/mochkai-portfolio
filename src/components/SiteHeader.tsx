@@ -34,14 +34,14 @@ export function SiteHeader({ name }: SiteHeaderProps) {
       >
         <Link
           href="/"
-          className="group flex min-h-11 min-w-0 items-center gap-3 rounded-sm font-display text-lg font-semibold tracking-tight text-foreground transition-[text-shadow] duration-150 ease-out hover:text-shadow-glow-sm motion-reduce:transition-none"
+          className="group flex min-h-11 min-w-0 items-center gap-3 rounded-sm font-display text-lg font-semibold tracking-tight text-foreground hover:text-shadow-glow-sm motion-safe:transition-[text-shadow] motion-safe:duration-150 motion-safe:ease-out motion-reduce:transition-none"
         >
           <Image
             src="/images/logo.svg"
             alt=""
             width={32}
             height={32}
-            className="size-8 shrink-0 rounded-full ring-1 ring-line transition-shadow duration-150 ease-out group-hover:shadow-glow-sm motion-reduce:transition-none"
+            className="size-8 shrink-0 rounded-full ring-1 ring-line group-hover:shadow-glow-sm motion-safe:transition-shadow motion-safe:duration-150 motion-safe:ease-out motion-reduce:transition-none"
           />
           <span className="truncate">{name}</span>
         </Link>

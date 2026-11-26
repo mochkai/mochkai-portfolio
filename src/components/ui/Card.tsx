@@ -33,7 +33,8 @@ const BASE = `${CARD_SURFACE} p-6 sm:p-7`;
  * {@link CARD_SURFACE} for interactive surfaces that are not a {@link Card}.
  */
 export const CARD_INTERACTIVE =
-  "transition-[border-color,box-shadow] duration-150 ease-out motion-reduce:transition-none " +
+  "motion-safe:transition-[border-color,box-shadow] motion-safe:duration-150 motion-safe:ease-out " +
+  "motion-reduce:transition-none " +
   "hover:border-neon/60 hover:shadow-glow focus-within:border-neon/60 focus-within:shadow-glow";
 
 /**

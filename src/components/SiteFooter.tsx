@@ -28,7 +28,7 @@ export function SiteFooter({ name, socials }: SiteFooterProps) {
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center rounded-sm px-2 font-medium text-neon transition-[color,text-shadow] duration-150 ease-out hover:text-glow hover:text-shadow-glow-sm motion-reduce:transition-none"
+                  className="inline-flex min-h-11 items-center rounded-sm px-2 font-medium text-neon hover:text-glow hover:text-shadow-glow-sm motion-safe:transition-[color,text-shadow] motion-safe:duration-150 motion-safe:ease-out motion-reduce:transition-none"
                 >
                   {social.label}
                 </a>
