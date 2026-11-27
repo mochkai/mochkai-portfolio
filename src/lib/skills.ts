@@ -1,4 +1,4 @@
-import type { Project, Skill, SkillGroup, SkillRank } from "@/lib/schemas";
+import type { Project, SkillRank } from "@/lib/schemas";
 import { toNameKey } from "@/lib/names";
 
 /** How many of the 3 pips are lit for each rank. */
@@ -60,37 +60,6 @@ export function countProjectsUsingSkill(
   projects: readonly Pick<Project, "tech">[],
 ): number {
   return filterProjectsByTech(projects, name).length;
-}
-
-/** A skill with the number of projects that use it. */
-export interface SkillWithUsage extends Skill {
-  /** Projects whose `tech` contains the skill name. */
-  questCount: number;
-}
-
-/** A skill group whose items carry their usage count. */
-export interface SkillGroupWithUsage extends Omit<SkillGroup, "items"> {
-  items: SkillWithUsage[];
-}
-
-/**
- * Adds "Used in N quests" counts to every skill, keeping the group and item order.
- *
- * @param skills - The profile's skill groups.
- * @param projects - All projects.
- * @returns New groups; the input is not mutated.
- */
-export function getSkillUsage(
-  skills: readonly SkillGroup[],
-  projects: readonly Pick<Project, "tech">[],
-): SkillGroupWithUsage[] {
-  return skills.map((group) => ({
-    category: group.category,
-    items: group.items.map((skill) => ({
-      ...skill,
-      questCount: countProjectsUsingSkill(skill.name, projects),
-    })),
-  }));
 }
 
 /**

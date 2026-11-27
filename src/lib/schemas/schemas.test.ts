@@ -12,6 +12,7 @@ import {
   projectSchema,
   slugSchema,
   yearMonthSchema,
+  type Profile,
 } from "./index";
 
 describe("yearMonthSchema", () => {
@@ -161,64 +162,115 @@ describe("profileSchema", () => {
     expect(profileSchema.safeParse(withoutEmail).success).toBe(true);
   });
 
-  it("rejects an invalid email, social URL, avatar or empty skill group", () => {
+  it("rejects an invalid email, social URL, avatar, empty tree or empty branch", () => {
     expect(profileSchema.safeParse(makeProfile({ email: "nope" })).success).toBe(false);
     expect(
       profileSchema.safeParse(makeProfile({ socials: [{ label: "X", url: "x.com" }] })).success,
     ).toBe(false);
     expect(profileSchema.safeParse(makeProfile({ avatar: "avatar.svg" })).success).toBe(false);
+    expect(profileSchema.safeParse(makeProfile({ skillTree: [] })).success).toBe(false);
     expect(
-      profileSchema.safeParse(makeProfile({ skills: [{ category: "Empty", items: [] }] })).success,
+      profileSchema.safeParse(
+        makeProfile({ skillTree: [{ id: "empty", name: "Empty", skills: [] }] }),
+      ).success,
     ).toBe(false);
   });
 
-  it("accepts the ranked skill shape with every rank", () => {
-    const skills = [
+  it("accepts the skill tree shape with every rank and optional requires", () => {
+    const skillTree = [
       {
-        category: "Frontend",
-        items: [
-          { name: "React", rank: "mastered" as const },
-          { name: "CSS", rank: "proficient" as const },
+        id: "frontend",
+        name: "Front end",
+        skills: [
+          { id: "typescript", name: "TypeScript", rank: "mastered" as const },
+          { id: "react", name: "React", rank: "proficient" as const, requires: ["typescript"] },
+          { id: "css", name: "CSS", rank: "learning" as const, requires: [] },
         ],
       },
-      { category: "AI", items: [{ name: "LangGraph", rank: "learning" as const }] },
     ];
-    expect(profileSchema.parse(makeProfile({ skills })).skills).toEqual(skills);
+    expect(profileSchema.parse(makeProfile({ skillTree })).skillTree).toEqual(skillTree);
   });
 
-  it("rejects an empty or whitespace-only category name", () => {
-    const withCategory = (category: string) =>
-      profileSchema.safeParse(
-        makeProfile({ skills: [{ category, items: [{ name: "React", rank: "mastered" }] }] }),
-      );
-    expect(withCategory("").success).toBe(false);
-    const blank = withCategory("   ");
-    expect(blank.success).toBe(false);
-    expect(blank.error?.issues.map((issue) => issue.message)).toContain(
-      "Skill category must not be empty",
-    );
-    expect(withCategory(" Frontend ").success).toBe(true);
+  it("validates the real profile.json skill tree", () => {
+    expect(profileSchema.parse(profileData).skillTree.length).toBeGreaterThan(0);
   });
 
-  it("rejects an unknown rank, an empty name, a string item and an empty category", () => {
-    const withItems = (items: unknown[]) =>
-      profileSchema.safeParse({ ...makeProfile(), skills: [{ category: "Frontend", items }] })
-        .success;
-    expect(withItems([{ name: "React", rank: "expert" }])).toBe(false);
-    expect(withItems([{ name: "React", rank: "Mastered" }])).toBe(false);
-    expect(withItems([{ name: "", rank: "mastered" }])).toBe(false);
-    expect(withItems([{ name: "   ", rank: "mastered" }])).toBe(false);
-    expect(withItems([{ name: "React" }])).toBe(false);
-    expect(withItems(["React"])).toBe(false);
-    expect(withItems([])).toBe(false);
+  it("rejects bad skill fields: unknown rank, blank name, bad id, string skill", () => {
+    const withSkills = (skills: unknown[]) =>
+      profileSchema.safeParse({
+        ...makeProfile(),
+        skillTree: [{ id: "frontend", name: "Front end", skills }],
+      }).success;
+    expect(withSkills([{ id: "react", name: "React", rank: "expert" }])).toBe(false);
+    expect(withSkills([{ id: "react", name: "React", rank: "Mastered" }])).toBe(false);
+    expect(withSkills([{ id: "react", name: "   ", rank: "mastered" }])).toBe(false);
+    expect(withSkills([{ id: "React JS", name: "React", rank: "mastered" }])).toBe(false);
+    expect(withSkills([{ name: "React", rank: "mastered" }])).toBe(false);
+    expect(withSkills(["React"])).toBe(false);
+    expect(withSkills([{ id: "react", name: "React", rank: "mastered" }])).toBe(true);
   });
 
-  it("rejects duplicate skill names across categories, case-insensitively after trimming", () => {
+  it("rejects a blank branch name", () => {
     const result = profileSchema.safeParse(
       makeProfile({
-        skills: [
-          { category: "Frontend", items: [{ name: "React", rank: "mastered" }] },
-          { category: "Other", items: [{ name: " react ", rank: "learning" }] },
+        skillTree: [
+          { id: "frontend", name: "  ", skills: [{ id: "a", name: "A", rank: "mastered" }] },
+        ],
+      }),
+    );
+    expect(result.error?.issues.map((issue) => issue.message)).toContain(
+      "Skill branch name must not be empty",
+    );
+  });
+
+  it("fails on duplicate ids, unknown or cross-branch requires and cycles", () => {
+    const messages = (skillTree: Profile["skillTree"]) =>
+      profileSchema.safeParse(makeProfile({ skillTree })).error?.issues.map((i) => i.message) ?? [];
+    expect(
+      messages([
+        { id: "a", name: "A", skills: [{ id: "x", name: "X", rank: "mastered" }] },
+        { id: "b", name: "B", skills: [{ id: "x", name: "Y", rank: "mastered" }] },
+      ]),
+    ).toContain('Duplicate skill id "x"');
+    expect(
+      messages([
+        {
+          id: "a",
+          name: "A",
+          skills: [{ id: "x", name: "X", rank: "mastered", requires: ["nope"] }],
+        },
+      ]),
+    ).toContain('"x" requires unknown skill "nope"');
+    expect(
+      messages([
+        { id: "a", name: "A", skills: [{ id: "x", name: "X", rank: "mastered" }] },
+        {
+          id: "b",
+          name: "B",
+          skills: [{ id: "y", name: "Y", rank: "mastered", requires: ["x"] }],
+        },
+      ]),
+    ).toContain('"y" requires "x" from another branch');
+    expect(
+      messages([
+        {
+          id: "a",
+          name: "A",
+          skills: [
+            { id: "x", name: "X", rank: "mastered", requires: ["y"] },
+            { id: "y", name: "Y", rank: "mastered", requires: ["x"] },
+          ],
+        },
+      ]),
+    ).toContain("Cycle in skill tree: x -> y -> x");
+  });
+
+  it("rejects duplicate skill names across branches, case-insensitively after trimming", () => {
+    const result = profileSchema.safeParse(
+      makeProfile({
+        skillTree: [
+          { id: "a", name: "A", skills: [{ id: "react", name: "React", rank: "mastered" }] },
+          { id: "b", name: "B", skills: [{ id: "react-2", name: " react ", rank: "learning" }] },
         ],
       }),
     );
@@ -226,21 +278,6 @@ describe("profileSchema", () => {
     expect(result.error?.issues.map((issue) => issue.message)).toContain(
       'Duplicate skill name " react "',
     );
-    expect(
-      profileSchema.safeParse(
-        makeProfile({
-          skills: [
-            {
-              category: "Frontend",
-              items: [
-                { name: "React", rank: "mastered" },
-                { name: "React", rank: "learning" },
-              ],
-            },
-          ],
-        }),
-      ).success,
-    ).toBe(false);
   });
 
   it("parses a profile with or without characterClass and currentlyLearning", () => {

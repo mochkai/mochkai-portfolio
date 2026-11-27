@@ -4,7 +4,6 @@ import {
   RANK_PIPS,
   countProjectsUsingSkill,
   filterProjectsByTech,
-  getSkillUsage,
   parseTechParam,
   projectUsesTech,
   questUsageLabel,
@@ -55,31 +54,6 @@ describe("filterProjectsByTech", () => {
     expect(filterProjectsByTech(projects, "React").map((p) => p.slug)).toEqual(["a", "b"]);
     expect(filterProjectsByTech(projects, "Unknown")).toEqual([]);
     expect(filterProjectsByTech(projects, "")).toEqual([]);
-  });
-});
-
-describe("getSkillUsage", () => {
-  it("adds a quest count to every skill without mutating the input", () => {
-    const skills = [
-      {
-        category: "Frontend",
-        items: [
-          { name: "React", rank: "mastered" as const },
-          { name: "Svelte", rank: "learning" as const },
-        ],
-      },
-    ];
-    const snapshot = structuredClone(skills);
-    expect(getSkillUsage(skills, projects)).toEqual([
-      {
-        category: "Frontend",
-        items: [
-          { name: "React", rank: "mastered", questCount: 2 },
-          { name: "Svelte", rank: "learning", questCount: 0 },
-        ],
-      },
-    ]);
-    expect(skills).toEqual(snapshot);
   });
 });
 

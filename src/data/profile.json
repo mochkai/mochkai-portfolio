@@ -15,76 +15,148 @@
       "url": "https://www.linkedin.com/in/your-handle"
     }
   ],
-  "skills": [
+  "skillTree": [
     {
-      "category": "Languages",
-      "items": [
+      "id": "frontend",
+      "name": "Front end",
+      "skills": [
         {
-          "name": "TypeScript",
+          "id": "html-css",
+          "name": "HTML & CSS",
           "rank": "mastered"
         },
         {
+          "id": "javascript",
+          "name": "JavaScript",
+          "rank": "mastered",
+          "requires": ["html-css"]
+        },
+        {
+          "id": "typescript",
+          "name": "TypeScript",
+          "rank": "mastered",
+          "requires": ["javascript"]
+        },
+        {
+          "id": "react",
+          "name": "React",
+          "rank": "mastered",
+          "requires": ["typescript"]
+        },
+        {
+          "id": "nextjs",
+          "name": "Next.js",
+          "rank": "mastered",
+          "requires": ["react"]
+        },
+        {
+          "id": "tailwind-css",
+          "name": "Tailwind CSS",
+          "rank": "proficient",
+          "requires": ["html-css"]
+        }
+      ]
+    },
+    {
+      "id": "backend",
+      "name": "Back end",
+      "skills": [
+        {
+          "id": "python",
           "name": "Python",
           "rank": "proficient"
         },
         {
-          "name": "SQL",
-          "rank": "proficient"
-        }
-      ]
-    },
-    {
-      "category": "Frontend",
-      "items": [
-        {
-          "name": "React",
-          "rank": "mastered"
+          "id": "fastapi",
+          "name": "FastAPI",
+          "rank": "proficient",
+          "requires": ["python"]
         },
         {
-          "name": "Next.js",
-          "rank": "mastered"
-        },
-        {
-          "name": "Tailwind CSS",
-          "rank": "proficient"
-        }
-      ]
-    },
-    {
-      "category": "Backend",
-      "items": [
-        {
+          "id": "nodejs",
           "name": "Node.js",
           "rank": "proficient"
         },
         {
+          "id": "rest-apis",
           "name": "REST APIs",
-          "rank": "mastered"
+          "rank": "mastered",
+          "requires": ["python", "nodejs"]
         },
         {
-          "name": "PostgreSQL",
+          "id": "sql",
+          "name": "SQL",
           "rank": "proficient"
+        },
+        {
+          "id": "postgresql",
+          "name": "PostgreSQL",
+          "rank": "proficient",
+          "requires": ["sql"]
         }
       ]
     },
     {
-      "category": "Tooling",
-      "items": [
+      "id": "devops",
+      "name": "DevOps",
+      "skills": [
         {
-          "name": "Docker",
-          "rank": "proficient"
-        },
-        {
+          "id": "git",
           "name": "Git",
           "rank": "mastered"
         },
         {
+          "id": "docker",
+          "name": "Docker",
+          "rank": "proficient",
+          "requires": ["git"]
+        },
+        {
+          "id": "ci-cd",
+          "name": "CI/CD",
+          "rank": "proficient",
+          "requires": ["docker"]
+        },
+        {
+          "id": "vitest",
           "name": "Vitest",
+          "rank": "proficient",
+          "requires": ["git"]
+        },
+        {
+          "id": "playwright",
+          "name": "Playwright",
+          "rank": "learning",
+          "requires": ["vitest"]
+        }
+      ]
+    },
+    {
+      "id": "ai-dev",
+      "name": "AI dev",
+      "skills": [
+        {
+          "id": "llm-apis",
+          "name": "LLM APIs",
           "rank": "proficient"
         },
         {
-          "name": "Playwright",
-          "rank": "learning"
+          "id": "prompt-engineering",
+          "name": "Prompt engineering",
+          "rank": "proficient",
+          "requires": ["llm-apis"]
+        },
+        {
+          "id": "ai-agents",
+          "name": "AI agents",
+          "rank": "learning",
+          "requires": ["prompt-engineering"]
+        },
+        {
+          "id": "langgraph",
+          "name": "LangGraph",
+          "rank": "learning",
+          "requires": ["ai-agents"]
         }
       ]
     }

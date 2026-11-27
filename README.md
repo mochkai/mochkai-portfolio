@@ -80,6 +80,32 @@ To add a new source, such as a headless CMS or a custom content API:
 
 Image rules: images must be site paths under `public/` (for example `/images/avatar.svg`); remote URLs are rejected by the schemas. Once a CMS is added, add its asset host to `images.remotePatterns` in `next.config.ts` and widen `imageSrcSchema`. Links must be `http:` or `https:` URLs, and an `endDate` may not be earlier than its `startDate` (dates are `YYYY-MM`, `endDate: null` means ongoing).
 
+### Editing the skill tree
+
+The About page skill tree comes from `skillTree` in `src/data/profile.json`: a list of branches, each a vertical tree that grows down from a root node.
+
+```json
+"skillTree": [
+  {
+    "id": "frontend",
+    "name": "Front end",
+    "skills": [
+      { "id": "typescript", "name": "TypeScript", "rank": "mastered" },
+      { "id": "react", "name": "React", "rank": "mastered", "requires": ["typescript"] }
+    ]
+  }
+]
+```
+
+- `id`: a lowercase slug (`a-z`, `0-9` and single hyphens, for example `ci-cd`), unique across the whole tree. Branch ids must be unique too.
+- `name`: shown on the node. It is also the `/projects?tech=` filter, so write it exactly as projects list it in their `tech` (compared case-insensitively). Names must be unique.
+- `rank`: `mastered`, `proficient` or `learning` (3, 2 or 1 lit pips).
+- `requires` (optional): ids of prerequisite skills **in the same branch**. Leave it out, or use `[]`, to hang the skill directly off the branch root. A skill can require several skills.
+- No coordinates: a skill's row is its longest prerequisite chain, and positions and connector lines are worked out from that (`src/lib/skill-tree.ts`). Order within a row follows the prerequisites, then the order in the file.
+- "Used in N quests" is counted from the projects, never set by hand.
+
+The data is validated with zod, so `npm run build` (and `npm test`) fail with a message naming the problem on: a duplicate id or name, a `requires` that points to an unknown id, to itself or to a skill in another branch, and a cycle (for example `Cycle in skill tree: a -> b -> a`).
+
 ## Public API
 
 A read-only JSON API for other projects. All endpoints use `GET` (and `OPTIONS` for preflight).

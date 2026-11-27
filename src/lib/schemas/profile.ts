@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { toNameKey } from "@/lib/names";
+import { findSkillTreeIssues } from "@/lib/skill-tree";
 import { httpUrlSchema, imageSrcSchema } from "./common";
 
 /** A link to an external profile (GitHub, LinkedIn, ...). */
@@ -17,39 +17,46 @@ export const SKILL_RANKS = ["mastered", "proficient", "learning"] as const;
 /** A skill rank: `mastered`, `proficient` or `learning` (lowercase in data). */
 export const skillRankSchema = z.enum(SKILL_RANKS);
 
-/** One skill and its owner-set rank, e.g. `{ "name": "React", "rank": "mastered" }`. */
+/** A skill or branch id: a lowercase slug such as `nextjs` or `ci-cd`. */
+const skillIdSchema = z
+  .string()
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Skill ids are lowercase slugs, e.g. ci-cd");
+
+/**
+ * One skill in the tree, e.g.
+ * `{ "id": "react", "name": "React", "rank": "mastered", "requires": ["typescript"] }`.
+ * `requires` lists prerequisite skill ids in the same branch; when it is missing or empty the
+ * skill hangs directly off the branch root.
+ */
 export const skillSchema = z.object({
+  id: skillIdSchema,
   // Must contain a visible character; also matched against project `tech` after trimming.
   name: z.string().regex(/\S/, "Skill name must not be empty"),
   rank: skillRankSchema,
+  requires: z.array(skillIdSchema).optional(),
 });
 
-/** A named group of related skills, e.g. "Frontend", with at least one skill. */
-export const skillGroupSchema = z.object({
-  category: z.string().regex(/\S/, "Skill category must not be empty"),
-  items: z.array(skillSchema).min(1),
+/** One branch of the tree (Front end, Back end, ...) with at least one skill. */
+export const skillBranchSchema = z.object({
+  id: skillIdSchema,
+  name: z.string().regex(/\S/, "Skill branch name must not be empty"),
+  skills: z.array(skillSchema).min(1),
 });
 
 /**
- * Every skill group. Skill names must be unique across the whole list, compared
- * case-insensitively after trimming, because each name is also a `/projects?tech=` filter.
+ * The whole skill tree. Besides the shape, it rejects (and so fails the build on) duplicate
+ * branch or skill ids, duplicate skill names (compared case-insensitively after trimming,
+ * because each name is also a `/projects?tech=` filter), a `requires` that points to an unknown
+ * id, to itself or to a skill in another branch, and cycles. See {@link findSkillTreeIssues}.
  */
-export const skillListSchema = z.array(skillGroupSchema).superRefine((groups, ctx) => {
-  const seen = new Set<string>();
-  groups.forEach((group, groupIndex) => {
-    group.items.forEach((skill, itemIndex) => {
-      const key = toNameKey(skill.name);
-      if (seen.has(key)) {
-        ctx.addIssue({
-          code: "custom",
-          message: `Duplicate skill name "${skill.name}"`,
-          path: [groupIndex, "items", itemIndex, "name"],
-        });
-      }
-      seen.add(key);
-    });
+export const skillTreeSchema = z
+  .array(skillBranchSchema)
+  .min(1)
+  .superRefine((tree, ctx) => {
+    for (const issue of findSkillTreeIssues(tree)) {
+      ctx.addIssue({ code: "custom", message: issue.message, path: issue.path });
+    }
   });
-});
 
 /** The site owner's profile. */
 export const profileSchema = z.object({
@@ -61,7 +68,7 @@ export const profileSchema = z.object({
   // Rendered as a `mailto:` link; z.email() only allows a plain address, so no scheme injection.
   email: z.email().optional(),
   socials: z.array(socialLinkSchema),
-  skills: skillListSchema,
+  skillTree: skillTreeSchema,
   /** Scoreboard "Class", e.g. `Full-stack · Backend main`. Falls back to `title` when unset. */
   characterClass: z.string().min(1).optional(),
   /** Scoreboard "Currently learning", e.g. `["LangGraph"]`. The tile is hidden when unset. */
@@ -70,6 +77,4 @@ export const profileSchema = z.object({
 
 export type SocialLink = z.infer<typeof socialLinkSchema>;
 export type SkillRank = z.infer<typeof skillRankSchema>;
-export type Skill = z.infer<typeof skillSchema>;
-export type SkillGroup = z.infer<typeof skillGroupSchema>;
 export type Profile = z.infer<typeof profileSchema>;
