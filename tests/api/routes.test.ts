@@ -74,19 +74,23 @@ describe("GET /api/profile", () => {
     expect(await res.json()).toEqual(profileData);
   });
 
-  it("returns skills as ranked { name, rank } items", async () => {
+  it("returns the skill tree as branches of ranked { id, name, rank, requires? } skills", async () => {
     const { profile } = await loadRoutes();
     const body = (await (await profile.GET(req("/api/profile"))).json()) as {
-      skills: { category: string; items: unknown[] }[];
+      skillTree: { id: string; name: string; skills: Record<string, unknown>[] }[];
     };
-    expect(body.skills.length).toBeGreaterThan(0);
-    for (const group of body.skills) {
-      expect(group.items.length).toBeGreaterThan(0);
-      for (const item of group.items) {
-        expect(item).toEqual({
+    expect(body.skillTree.length).toBeGreaterThan(0);
+    for (const branch of body.skillTree) {
+      expect(branch.skills.length).toBeGreaterThan(0);
+      for (const skill of branch.skills) {
+        expect(skill).toMatchObject({
+          id: expect.any(String),
           name: expect.any(String),
           rank: expect.stringMatching(/^(mastered|proficient|learning)$/),
         });
+        expect(
+          Object.keys(skill).every((key) => ["id", "name", "rank", "requires"].includes(key)),
+        ).toBe(true);
       }
     }
   });

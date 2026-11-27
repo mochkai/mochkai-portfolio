@@ -84,6 +84,14 @@
   --animate-pip-unlock: pip-unlock 400ms ease-out backwards;
 
   /*
+   * About skill tree. animate-path-charge: when a skill is hovered, focused or selected, the
+   * lit connectors back to the branch root power up from dim to their glow (opacity and filter
+   * only, no movement, 260 ms, once per traced skill). Applied only under motion-safe:, so the
+   * lit path appears without animation under reduced motion.
+   */
+  --animate-path-charge: path-charge 260ms ease-out;
+
+  /*
    * "Join the party" CTA. animate-party-pulse: while the email CTA is hovered or keyboard
    * focused, its glow breathes (box-shadow only, no movement). Applied only under motion-safe:,
    * so it never runs under reduced motion; the static hover glow stays.
@@ -151,6 +159,17 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes path-charge {
+    from {
+      opacity: 0.25;
+      filter: brightness(0.6);
+    }
+    to {
+      opacity: 1;
+      filter: brightness(1);
     }
   }
 

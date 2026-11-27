@@ -11,7 +11,7 @@ import { StatTile } from "@/components/ui/StatTile";
 import { cx } from "@/lib/cx";
 import { getRepository } from "@/lib/data";
 import { isSvgImage } from "@/lib/images";
-import { getSkillUsage } from "@/lib/skills";
+import { buildSkillTree } from "@/lib/skill-tree";
 import { getAboutStats, getCharacterClass } from "@/lib/stats";
 
 export const metadata: Metadata = {
@@ -28,8 +28,10 @@ const SECTION_HEADING = "mb-5 font-display text-2xl font-semibold tracking-tight
  * - Sidebar: the identity panel (portrait, name, title, `Class` and `Region` HUD labels and the
  *   character stats from `getAboutStats`, the same tiles as the home scoreboard plus Guilds
  *   joined).
- * - Main column: the bio as "Backstory" and the skill tree, where each skill shows its owner-set
- *   rank and how many projects use it, linking to `/projects?tech=<name>`.
+ * - Main column: the bio as "Backstory".
+ * - Full width below: the RPG skill tree (`profile.skillTree`, laid out on the server by
+ *   `buildSkillTree`), one branch per column, where each skill shows its owner-set rank and,
+ *   in the details panel, how many projects use it, linking to `/projects?tech=<name>`.
  * - Full width at the end: the "Join the party" contact section (`#contact`, the nav "Contact"
  *   destination).
  *
@@ -44,7 +46,7 @@ export default async function AboutPage() {
     repository.getExperience(),
   ]);
   const stats = getAboutStats({ profile, projects, experience });
-  const skills = getSkillUsage(profile.skills, projects);
+  const skillTree = buildSkillTree(profile.skillTree, projects);
 
   return (
     <>
@@ -118,15 +120,15 @@ export default async function AboutPage() {
             </h2>
             <p className="max-w-prose text-lg leading-relaxed text-muted">{profile.bio}</p>
           </section>
-
-          <section aria-labelledby="skills-heading">
-            <h2 id="skills-heading" className={SECTION_HEADING}>
-              Skills
-            </h2>
-            <SkillTree groups={skills} />
-          </section>
         </div>
       </div>
+
+      <section aria-labelledby="skills-heading" className="mt-14">
+        <h2 id="skills-heading" className={SECTION_HEADING}>
+          Skills
+        </h2>
+        <SkillTree branches={skillTree} />
+      </section>
 
       <JoinTheParty email={profile.email} socials={profile.socials} className="mt-16" />
     </>

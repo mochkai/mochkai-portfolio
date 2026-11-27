@@ -498,7 +498,7 @@ test.describe("pages", () => {
       await page.goto("/about");
       await expect(page.getByTestId("identity-panel")).toBeVisible();
       await expect(page.getByLabel("Character stats")).toBeVisible();
-      await expect(page.getByTestId("skill-category").first()).toBeVisible();
+      await expect(page.getByTestId("skill-tree")).toBeVisible();
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
@@ -534,8 +534,11 @@ test.describe("pages", () => {
   test("about skill tree shows ranks as text and no progress bars", async ({ page }) => {
     await page.goto("/about");
     const skills = page.getByRole("region", { name: "Skills" });
-    await expect(skills.getByTestId("skill").first()).toContainText(
+    await expect(skills.getByTestId("skill-node").first()).toHaveAccessibleName(
       /, (Mastered|Proficient|Learning)/,
+    );
+    await expect(skills.getByTestId("skill-node").first()).toContainText(
+      /(Mastered|Proficient|Learning)/,
     );
     await expect(page.getByRole("progressbar")).toHaveCount(0);
     await expect(page.locator("progress, meter")).toHaveCount(0);
@@ -545,18 +548,25 @@ test.describe("pages", () => {
     const projects: { title: string; tech: string[] }[] = await (
       await request.get("/api/projects")
     ).json();
+    const profile: { skillTree: { skills: { name: string }[] }[] } = await (
+      await request.get("/api/profile")
+    ).json();
+    const usedBy = (name: string) =>
+      projects
+        .filter((p) => p.tech.some((t) => t.trim().toLowerCase() === name.toLowerCase()))
+        .map((p) => p.title);
+    // The first skill (in the first branch, so it is visible at any width) used by a quest.
+    const name = profile.skillTree[0].skills.map((s) => s.name).find((n) => usedBy(n).length > 0);
+    expect(name).toBeDefined();
+    const expected = usedBy(name!);
     await page.goto("/about");
-    const link = page
-      .getByRole("region", { name: "Skills" })
-      .getByRole("link", { name: /^Used in \d+ quests? \(/ })
-      .first();
-    const name = (await link.textContent())!.match(/\((.+)\)$/)![1];
-    const expected = projects
-      .filter((p) => p.tech.some((t) => t.trim().toLowerCase() === name.toLowerCase()))
-      .map((p) => p.title);
-    expect(expected.length).toBeGreaterThan(0);
+    const skills = page.getByRole("region", { name: "Skills" });
+    await skills.getByRole("button", { name: new RegExp(`^${escapeRegExp(name!)},`) }).click();
+    const link = skills.getByTestId("skill-details").getByRole("link", {
+      name: new RegExp(`^Used in \\d+ quests? \\(${escapeRegExp(name!)}\\)$`),
+    });
     await link.click();
-    await expect(page).toHaveURL(`/projects?tech=${encodeURIComponent(name)}`);
+    await expect(page).toHaveURL(`/projects?tech=${encodeURIComponent(name!)}`);
     const filter = page.getByRole("region", { name: `Quests using ${name}` });
     await expect(filter.getByRole("heading", { level: 3 })).toHaveText(expected);
     await filter.getByRole("link", { name: "Show all quests" }).click();
@@ -589,19 +599,28 @@ test.describe("pages", () => {
     await expect(lit.first()).toHaveCSS("opacity", "1");
   });
 
-  test("skill quest links are keyboard reachable with a visible focus ring", async ({ page }) => {
+  test("skill nodes and quest links are keyboard reachable with a visible focus ring", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/about");
-    const link = page
-      .getByRole("region", { name: "Skills" })
-      .getByRole("link", { name: /^Used in \d+ quests? \(/ })
-      .first();
-    // Tab through the page until the first skill link has focus.
-    for (let i = 0; i < 60 && !(await link.evaluate((el) => el === document.activeElement)); i++) {
+    const skills = page.getByRole("region", { name: "Skills" });
+    const first = skills.getByTestId("skill-node").first();
+    // Tab through the page until the tree's single Tab stop (its first skill) has focus.
+    for (let i = 0; i < 60 && !(await first.evaluate((el) => el === document.activeElement)); i++) {
       await page.keyboard.press("Tab");
     }
+    await expect(first).toBeFocused();
+    await expect(first).toHaveCSS("outline-style", "solid");
+    await expect(first).toHaveCSS("outline-width", "2px");
+    // Arrow to a skill with quests, then Tab moves on to its link in the details panel.
+    const link = skills.getByTestId("skill-details").getByRole("link");
+    for (let i = 0; i < 30 && (await link.count()) === 0; i++) {
+      await page.keyboard.press("ArrowDown");
+    }
+    await page.keyboard.press("Tab");
     await expect(link).toBeFocused();
     await expect(link).toHaveCSS("outline-style", "solid");
-    await expect(link).toHaveCSS("outline-width", "2px");
   });
 
   test("navigating via the header reaches each section", async ({ page }) => {

@@ -207,6 +207,13 @@ test.describe("reduced motion audit", () => {
 
   test("about: skill pips and the contact CTA stay still on hover and focus", async ({ page }) => {
     await page.goto("/about");
+    // Tracing a skill path lights it without any animation or transition.
+    const node = page.getByTestId("skill-node").first();
+    await node.hover();
+    await expect(node).toHaveAttribute("data-on-path", "true");
+    await node.focus();
+    expect(await movingAnimations(page)).toEqual([]);
+    expect(await animatedStyles(page)).toEqual([]);
     const cta = page
       .getByRole("region", { name: "Join the party" })
       .getByRole("link", { name: "Email me" });

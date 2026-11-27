@@ -57,7 +57,13 @@ export function makeProfile(overrides: Partial<Profile> = {}): Profile {
       { label: "GitHub", url: "https://github.com/ada" },
       { label: "LinkedIn", url: "https://www.linkedin.com/in/ada" },
     ],
-    skills: [{ category: "Languages", items: [{ name: "TypeScript", rank: "mastered" }] }],
+    skillTree: [
+      {
+        id: "frontend",
+        name: "Front end",
+        skills: [{ id: "typescript", name: "TypeScript", rank: "mastered" }],
+      },
+    ],
     characterClass: "Full-stack · Backend main",
     currentlyLearning: ["LangGraph"],
     ...overrides,

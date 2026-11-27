@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import AboutPage from "@/app/about/page";
 import ExperiencePage from "@/app/experience/page";
@@ -63,6 +63,11 @@ async function renderProjects(search: Record<string, string | string[]> = {}) {
 function projectsUsing(name: string) {
   const key = name.trim().toLowerCase();
   return projectsData.filter((p) => p.tech.some((t) => t.trim().toLowerCase() === key));
+}
+
+/** Escapes RegExp metacharacters so `text` matches literally inside a pattern. */
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /** `params` prop for the project detail page. */
@@ -357,8 +362,8 @@ describe("AboutPage", () => {
   it("renders skills and contact links", async () => {
     render(await AboutPage());
     expect(screen.getByRole("heading", { level: 1, name: "About" })).toBeInTheDocument();
-    for (const group of profileData.skills) {
-      expect(screen.getByRole("heading", { level: 3, name: group.category })).toBeInTheDocument();
+    for (const branch of profileData.skillTree) {
+      expect(screen.getByRole("heading", { level: 3, name: branch.name })).toBeInTheDocument();
     }
     const contact = screen.getByRole("region", { name: "Join the party" });
     expect(contact).toHaveAttribute("id", "contact");
@@ -427,32 +432,73 @@ describe("AboutPage", () => {
     ]);
   });
 
-  it("shows every skill with its rank pips, rank text and quest usage", async () => {
+  it("shows every skill tree branch and node with its rank pips and accessible name", async () => {
     render(await AboutPage());
     const skills = screen.getByRole("region", { name: "Skills" });
-    for (const group of profileData.skills) {
-      const category = within(skills).getByRole("region", { name: group.category });
-      const items = within(category).getAllByRole("listitem");
-      expect(items).toHaveLength(group.items.length);
-      group.items.forEach((skill, index) => {
-        const item = items[index];
+    const branches = within(skills).getAllByTestId("skill-branch");
+    expect(branches).toHaveLength(profileData.skillTree.length);
+    profileData.skillTree.forEach((branch, branchIndex) => {
+      const column = branches[branchIndex];
+      expect(within(column).getByRole("heading", { level: 3, name: branch.name })).toBeVisible();
+      const nodes = within(column).getAllByTestId("skill-node");
+      expect(nodes).toHaveLength(branch.skills.length);
+      const names = new Map(branch.skills.map((skill) => [skill.id, skill.name]));
+      branch.skills.forEach((skill, index) => {
+        const item = nodes[index];
         const rank = skill.rank as keyof typeof RANK_PIPS;
-        expect(item).toHaveTextContent(`${skill.name}, ${rankLabel(rank)}`);
+        const requires = ("requires" in skill ? (skill.requires ?? []) : []).map((id) =>
+          names.get(id)!,
+        );
+        expect(item.tagName).toBe("BUTTON");
+        expect(item).toHaveAccessibleName(
+          new RegExp(
+            `^${escapeRegExp(`${skill.name}, ${rankLabel(rank)}`)}${requires.length > 0 ? ", requires " : "$"}`,
+          ),
+        );
         const pips = within(item).getByTestId("rank-pips");
         expect(pips).toHaveAttribute("aria-hidden", "true");
         expect(pips.querySelectorAll('[data-lit="true"]')).toHaveLength(RANK_PIPS[rank]);
         expect(pips.querySelectorAll("[data-lit]")).toHaveLength(3);
-        const count = projectsUsing(skill.name).length;
-        if (count > 0) {
-          const label = `Used in ${count} ${count === 1 ? "quest" : "quests"}`;
-          expect(
-            within(item).getByRole("link", { name: `${label} (${skill.name})` }),
-          ).toHaveAttribute("href", `/projects?tech=${encodeURIComponent(skill.name)}`);
-        } else {
-          expect(within(item).queryByRole("link")).not.toBeInTheDocument();
-          expect(within(item).getByText("No quests yet")).toBeInTheDocument();
-        }
       });
+      // One connector per requires, plus one from the root for each skill without any.
+      const expectedEdges = branch.skills.reduce(
+        (total, skill) =>
+          total + Math.max(1, "requires" in skill ? (skill.requires?.length ?? 0) : 0),
+        0,
+      );
+      expect(column.querySelectorAll(`[data-testid="skill-edge"]`)).toHaveLength(expectedEdges);
+    });
+  });
+
+  it("marks the currently learning skill as Learning in the tree", async () => {
+    render(await AboutPage());
+    for (const name of profileData.currentlyLearning) {
+      expect(screen.getByRole("button", { name: new RegExp(`^${name}, Learning`) })).toBeVisible();
+    }
+  });
+
+  it("shows a skill's quest usage in the details panel, linked when used", async () => {
+    render(await AboutPage());
+    const skills = profileData.skillTree.flatMap((branch) => branch.skills);
+    for (const skill of skills) {
+      fireEvent.click(
+        screen.getByRole("button", { name: new RegExp(`^${escapeRegExp(skill.name)},`) }),
+      );
+      const details = screen.getByTestId("skill-details");
+      const count = projectsUsing(skill.name).length;
+      if (count > 0) {
+        const label = `Used in ${count} ${count === 1 ? "quest" : "quests"}`;
+        expect(
+          within(details).getByRole("link", { name: `${label} (${skill.name})` }),
+        ).toHaveAttribute("href", `/projects?tech=${encodeURIComponent(skill.name)}`);
+      } else {
+        expect(within(details).queryByRole("link")).not.toBeInTheDocument();
+        // The visible quest line; the sr-only live status repeats it for screen readers.
+        expect(within(details).getByText("No quests yet", { selector: "span" })).toBeVisible();
+      }
+      expect(screen.getByTestId("skill-details-status")).toHaveTextContent(
+        count > 0 ? `Used in ${count} ${count === 1 ? "quest" : "quests"}` : "No quests yet",
+      );
     }
   });
 
