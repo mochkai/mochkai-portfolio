@@ -363,7 +363,9 @@ describe("AboutPage", () => {
     render(await AboutPage());
     expect(screen.getByRole("heading", { level: 1, name: "About" })).toBeInTheDocument();
     for (const branch of profileData.skillTree) {
-      expect(screen.getByRole("heading", { level: 3, name: branch.name })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: new RegExp(`^${escapeRegExp(branch.name)} branch,`) }),
+      ).toBeInTheDocument();
     }
     const contact = screen.getByRole("region", { name: "Join the party" });
     expect(contact).toHaveAttribute("id", "contact");
@@ -432,15 +434,21 @@ describe("AboutPage", () => {
     ]);
   });
 
-  it("shows every skill tree branch and node with its rank pips and accessible name", async () => {
+  it("shows every skill map branch and node with its rank ring and accessible name", async () => {
     render(await AboutPage());
     const skills = screen.getByRole("region", { name: "Skills" });
+    expect(within(skills).getByRole("button", { name: /^Start, / })).toBeInTheDocument();
     const branches = within(skills).getAllByTestId("skill-branch");
     expect(branches).toHaveLength(profileData.skillTree.length);
     profileData.skillTree.forEach((branch, branchIndex) => {
-      const column = branches[branchIndex];
-      expect(within(column).getByRole("heading", { level: 3, name: branch.name })).toBeVisible();
-      const nodes = within(column).getAllByTestId("skill-node");
+      const group = branches[branchIndex];
+      expect(group).toHaveAccessibleName(`${branch.name} branch`);
+      expect(
+        within(group).getByRole("button", {
+          name: `${branch.name} branch, ${branch.skills.length} skills`,
+        }),
+      ).toBeInTheDocument();
+      const nodes = within(group).getAllByTestId("skill-node");
       expect(nodes).toHaveLength(branch.skills.length);
       const names = new Map(branch.skills.map((skill) => [skill.id, skill.name]));
       branch.skills.forEach((skill, index) => {
@@ -449,25 +457,34 @@ describe("AboutPage", () => {
         const requires = ("requires" in skill ? (skill.requires ?? []) : []).map((id) =>
           names.get(id)!,
         );
-        expect(item.tagName).toBe("BUTTON");
+        expect(item).toHaveAttribute("role", "button");
         expect(item).toHaveAccessibleName(
           new RegExp(
             `^${escapeRegExp(`${skill.name}, ${rankLabel(rank)}`)}${requires.length > 0 ? ", requires " : "$"}`,
           ),
         );
-        const pips = within(item).getByTestId("rank-pips");
-        expect(pips).toHaveAttribute("aria-hidden", "true");
-        expect(pips.querySelectorAll('[data-lit="true"]')).toHaveLength(RANK_PIPS[rank]);
-        expect(pips.querySelectorAll("[data-lit]")).toHaveLength(3);
+        const ring = within(item).getByTestId("rank-ring");
+        expect(ring).toHaveAttribute("aria-hidden", "true");
+        expect(ring.querySelectorAll('[data-lit="true"]')).toHaveLength(RANK_PIPS[rank]);
+        expect(ring.querySelectorAll("[data-lit]")).toHaveLength(3);
       });
-      // One connector per requires, plus one from the root for each skill without any.
-      const expectedEdges = branch.skills.reduce(
+    });
+    // Every skill name is drawn on the map.
+    expect(
+      within(skills)
+        .getAllByTestId("skill-name")
+        .map((name) => name.textContent),
+    ).toEqual(profileData.skillTree.flatMap((branch) => branch.skills.map((skill) => skill.name)));
+    // One spoke per hub, one link per skill on a hub and one per requires.
+    const skillList = profileData.skillTree.flatMap((branch) => branch.skills);
+    const expectedEdges =
+      profileData.skillTree.length +
+      skillList.reduce(
         (total, skill) =>
           total + Math.max(1, "requires" in skill ? (skill.requires?.length ?? 0) : 0),
         0,
       );
-      expect(column.querySelectorAll(`[data-testid="skill-edge"]`)).toHaveLength(expectedEdges);
-    });
+    expect(within(skills).getAllByTestId("skill-edge")).toHaveLength(expectedEdges);
   });
 
   it("marks the currently learning skill as Learning in the tree", async () => {
@@ -519,11 +536,11 @@ describe("AboutPage", () => {
     expect(text).not.toMatch(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w* \d/i);
   });
 
-  it("runs the pip unlock animation only under motion-safe", async () => {
+  it("runs the rank ring unlock animation only under motion-safe", async () => {
     render(await AboutPage());
-    const pips = screen.getAllByTestId("rank-pip");
+    const pips = screen.getAllByTestId("rank-segment");
     for (const pip of pips) {
-      const classes = [...pip.classList];
+      const classes = (pip.getAttribute("class") ?? "").split(/\s+/);
       expect(classes).not.toContain("animate-pip-unlock");
       if (pip.dataset.lit === "true") expect(classes).toContain("motion-safe:animate-pip-unlock");
       else expect(classes.some((c) => c.includes("animate"))).toBe(false);

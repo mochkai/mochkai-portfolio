@@ -191,6 +191,36 @@ describe("profileSchema", () => {
     expect(profileSchema.parse(makeProfile({ skillTree })).skillTree).toEqual(skillTree);
   });
 
+  it("accepts a known icon override on skills and branches and rejects an unknown one", () => {
+    const skillTree = [
+      {
+        id: "tools",
+        name: "Tools",
+        icon: "devops" as const,
+        skills: [
+          { id: "compose", name: "Compose", rank: "proficient" as const, icon: "docker" as const },
+        ],
+      },
+    ];
+    expect(profileSchema.parse(makeProfile({ skillTree })).skillTree).toEqual(skillTree);
+    // Raw data, as it would come from profile.json (safeParse takes unknown input).
+    const result = profileSchema.safeParse({
+      ...makeProfile(),
+      skillTree: [
+        {
+          id: "tools",
+          name: "Tools",
+          skills: [{ id: "x", name: "X", rank: "mastered", icon: "kubernetes" }],
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]).toMatchObject({
+      path: ["skillTree", 0, "skills", 0, "icon"],
+      message: expect.stringMatching(/^Unknown icon "kubernetes"\. Use one of: html-css, /),
+    });
+  });
+
   it("validates the real profile.json skill tree", () => {
     expect(profileSchema.parse(profileData).skillTree.length).toBeGreaterThan(0);
   });

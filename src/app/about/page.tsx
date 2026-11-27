@@ -11,7 +11,7 @@ import { StatTile } from "@/components/ui/StatTile";
 import { cx } from "@/lib/cx";
 import { getRepository } from "@/lib/data";
 import { isSvgImage } from "@/lib/images";
-import { buildSkillTree } from "@/lib/skill-tree";
+import { buildSkillMap } from "@/lib/skill-tree";
 import { getAboutStats, getCharacterClass } from "@/lib/stats";
 
 export const metadata: Metadata = {
@@ -29,9 +29,10 @@ const SECTION_HEADING = "mb-5 font-display text-2xl font-semibold tracking-tight
  *   character stats from `getAboutStats`, the same tiles as the home scoreboard plus Guilds
  *   joined).
  * - Main column: the bio as "Backstory".
- * - Full width below: the RPG skill tree (`profile.skillTree`, laid out on the server by
- *   `buildSkillTree`), one branch per column, where each skill shows its owner-set rank and,
- *   in the details panel, how many projects use it, linking to `/projects?tech=<name>`.
+ * - Full width below: the RPG skill map (`profile.skillTree`, both layouts computed on the server
+ *   by `buildSkillMap`), a pannable map of round skill nodes around a start node, where each
+ *   skill shows its owner-set rank and, in the details panel, how many projects use it,
+ *   linking to `/projects?tech=<name>`.
  * - Full width at the end: the "Join the party" contact section (`#contact`, the nav "Contact"
  *   destination).
  *
@@ -46,7 +47,7 @@ export default async function AboutPage() {
     repository.getExperience(),
   ]);
   const stats = getAboutStats({ profile, projects, experience });
-  const skillTree = buildSkillTree(profile.skillTree, projects);
+  const skillMap = buildSkillMap(profile.skillTree, projects);
 
   return (
     <>
@@ -127,7 +128,14 @@ export default async function AboutPage() {
         <h2 id="skills-heading" className={SECTION_HEADING}>
           Skills
         </h2>
-        <SkillTree branches={skillTree} />
+        {/* From 1280 px, with the details panel beside it, the map bleeds into the page margins. */}
+        <div className="xl:-mx-20">
+          <SkillTree
+            data={skillMap}
+            startTitle={profile.name}
+            startSubtitle={getCharacterClass(profile)}
+          />
+        </div>
       </section>
 
       <JoinTheParty email={profile.email} socials={profile.socials} className="mt-16" />
