@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SKILL_ICON_NAMES, isSkillIconName } from "@/lib/skill-icons";
 import { findSkillTreeIssues } from "@/lib/skill-tree";
 import { httpUrlSchema, imageSrcSchema } from "./common";
 
@@ -23,10 +24,20 @@ const skillIdSchema = z
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Skill ids are lowercase slugs, e.g. ci-cd");
 
 /**
+ * An optional icon override: a key of `SKILL_ICONS` (`src/lib/skill-icons.ts`). Unknown names
+ * fail the build with the list of known ones; leaving it out uses the icon keyed by the id.
+ */
+const skillIconSchema = z.string().refine(isSkillIconName, {
+  error: (issue) =>
+    `Unknown icon "${String(issue.input)}". Use one of: ${SKILL_ICON_NAMES.join(", ")}`,
+});
+
+/**
  * One skill in the tree, e.g.
  * `{ "id": "react", "name": "React", "rank": "mastered", "requires": ["typescript"] }`.
  * `requires` lists prerequisite skill ids in the same branch; when it is missing or empty the
- * skill hangs directly off the branch root.
+ * skill hangs directly off the branch hub. `icon` optionally picks another icon (see
+ * {@link skillIconSchema}).
  */
 export const skillSchema = z.object({
   id: skillIdSchema,
@@ -34,12 +45,14 @@ export const skillSchema = z.object({
   name: z.string().regex(/\S/, "Skill name must not be empty"),
   rank: skillRankSchema,
   requires: z.array(skillIdSchema).optional(),
+  icon: skillIconSchema.optional(),
 });
 
-/** One branch of the tree (Front end, Back end, ...) with at least one skill. */
+/** One branch of the tree (Front end, Back end, ...) with at least one skill; `icon` as above. */
 export const skillBranchSchema = z.object({
   id: skillIdSchema,
   name: z.string().regex(/\S/, "Skill branch name must not be empty"),
+  icon: skillIconSchema.optional(),
   skills: z.array(skillSchema).min(1),
 });
 

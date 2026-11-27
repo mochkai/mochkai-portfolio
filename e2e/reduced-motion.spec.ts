@@ -184,6 +184,8 @@ test.describe("reduced motion audit", () => {
   test("projects: cards neither tilt nor animate on hover and focus", async ({ page }) => {
     await page.goto("/projects");
     const tilt = page.getByTestId("tilt-card").first();
+    // The quest board streams in behind a "Loading quests…" fallback: wait until it is shown.
+    await expect(tilt).toBeVisible();
     const box = (await tilt.boundingBox())!;
     await page.mouse.move(box.x + box.width - 16, box.y + 16, { steps: 6 });
     await expect(tilt).toHaveAttribute("data-tilt", "off");
@@ -205,9 +207,11 @@ test.describe("reduced motion audit", () => {
     expect(await animatedStyles(page)).toEqual([]);
   });
 
-  test("about: skill pips and the contact CTA stay still on hover and focus", async ({ page }) => {
+  test("about: the skill map and the contact CTA stay still on hover and focus", async ({
+    page,
+  }) => {
     await page.goto("/about");
-    // Tracing a skill path lights it without any animation or transition.
+    // Tracing a skill path lights it without any animation or transition (no flowing dash).
     const node = page.getByTestId("skill-node").first();
     await node.hover();
     await expect(node).toHaveAttribute("data-on-path", "true");

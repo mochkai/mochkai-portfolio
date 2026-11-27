@@ -77,9 +77,10 @@
   --animate-chapter-reveal: chapter-reveal 200ms ease-out;
 
   /*
-   * About skill tree. animate-pip-unlock: a lit rank pip powers on from dim to its glow (no
-   * movement, 400 ms, once on load, staggered with an inline animation-delay). It starts dimmed,
-   * never invisible. Applied only under motion-safe:, so it never runs under reduced motion.
+   * About skill map. animate-pip-unlock: a lit rank pip or rank ring segment powers on from dim
+   * to its glow (no movement, 400 ms, once on load, staggered with an inline animation-delay).
+   * It starts dimmed, never invisible. Applied only under motion-safe:, so it never runs under
+   * reduced motion.
    */
   --animate-pip-unlock: pip-unlock 400ms ease-out backwards;
 
@@ -90,6 +91,13 @@
    * lit path appears without animation under reduced motion.
    */
   --animate-path-charge: path-charge 260ms ease-out;
+
+  /*
+   * About skill map (#29). animate-skill-flow: a dash flows along the lit connectors back to
+   * the start node while a node is hovered or selected (stroke-dashoffset only, 1 s loop).
+   * Applied only under motion-safe:, so under reduced motion the lit path is still.
+   */
+  --animate-skill-flow: skill-flow 1s linear infinite;
 
   /*
    * "Join the party" CTA. animate-party-pulse: while the email CTA is hovered or keyboard
@@ -170,6 +178,12 @@
     to {
       opacity: 1;
       filter: brightness(1);
+    }
+  }
+
+  @keyframes skill-flow {
+    to {
+      stroke-dashoffset: -17;
     }
   }
 

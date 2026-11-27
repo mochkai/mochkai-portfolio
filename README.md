@@ -82,15 +82,16 @@ Image rules: images must be site paths under `public/` (for example `/images/ava
 
 ### Editing the skill tree
 
-The About page skill tree comes from `skillTree` in `src/data/profile.json`: a list of branches, each a vertical tree that grows down from a root node.
+The About page skill map comes from `skillTree` in `src/data/profile.json`: a list of branches (Front end, Back end, ...), each with skills that grow out from the branch's hub. Every hub hangs off a start node (the logo). Visitors can switch between two layouts, **Constellation** (the default: the start node in the centre, hubs on the diagonals, skills on rings further out) and **World tree** (start node on top, hubs in a row, branches growing down), and pan and zoom the map. Their choice is remembered in `localStorage` (`mochkai:skill-map-layout:v1`).
 
 ```json
 "skillTree": [
   {
     "id": "frontend",
     "name": "Front end",
+    "icon": "frontend",
     "skills": [
-      { "id": "typescript", "name": "TypeScript", "rank": "mastered" },
+      { "id": "typescript", "name": "TypeScript", "rank": "mastered", "icon": "typescript" },
       { "id": "react", "name": "React", "rank": "mastered", "requires": ["typescript"] }
     ]
   }
@@ -98,13 +99,16 @@ The About page skill tree comes from `skillTree` in `src/data/profile.json`: a l
 ```
 
 - `id`: a lowercase slug (`a-z`, `0-9` and single hyphens, for example `ci-cd`), unique across the whole tree. Branch ids must be unique too.
-- `name`: shown on the node. It is also the `/projects?tech=` filter, so write it exactly as projects list it in their `tech` (compared case-insensitively). Names must be unique.
-- `rank`: `mastered`, `proficient` or `learning` (3, 2 or 1 lit pips).
-- `requires` (optional): ids of prerequisite skills **in the same branch**. Leave it out, or use `[]`, to hang the skill directly off the branch root. A skill can require several skills.
-- No coordinates: a skill's row is its longest prerequisite chain, and positions and connector lines are worked out from that (`src/lib/skill-tree.ts`). Order within a row follows the prerequisites, then the order in the file.
+- `name`: shown under the node. It is also the `/projects?tech=` filter, so write it exactly as projects list it in their `tech` (compared case-insensitively). Names must be unique.
+- `rank`: `mastered`, `proficient` or `learning` (3, 2 or 1 lit segments of the ring around the node, and 3, 2 or 1 lit pips in the details panel).
+- `requires` (optional): ids of prerequisite skills **in the same branch**. Leave it out, or use `[]`, to hang the skill directly off the branch hub. A skill can require several skills.
+- `icon` (optional, on skills and branches): which icon to draw. Leave it out to use the icon named after the id; an id without an icon gets a neutral rune glyph. The icons are inlined in `src/lib/skill-icons.ts` (no CDN), keyed by these names: `html-css`, `javascript`, `typescript`, `react`, `nextjs`, `tailwind-css`, `python`, `fastapi`, `nodejs`, `postgresql`, `git`, `docker`, `vitest`, `langgraph` (the LangChain logo), `rest-apis`, `sql`, `ci-cd`, `playwright`, `llm-apis`, `prompt-engineering`, `ai-agents`, and the hubs `frontend`, `backend`, `devops`, `ai-dev`. An unknown name fails the build with this list. To add an icon, copy its path data from [Simple Icons](https://simpleicons.org) (brand logos) or [Lucide](https://lucide.dev) (line icons) into that file under a new key.
+- No coordinates: a skill's ring (Constellation) or row (World tree) is its longest prerequisite chain, and positions, connector lines and the fitted view box are worked out from that (`src/lib/skill-tree.ts`, unit-tested). Order within a row follows the prerequisites, then the order in the file.
 - "Used in N quests" is counted from the projects, never set by hand.
 
-The data is validated with zod, so `npm run build` (and `npm test`) fail with a message naming the problem on: a duplicate id or name, a `requires` that points to an unknown id, to itself or to a skill in another branch, and a cycle (for example `Cycle in skill tree: a -> b -> a`).
+The data is validated with zod, so `npm run build` (and `npm test`) fail with a message naming the problem on: a duplicate id or name, a `requires` that points to an unknown id, to itself or to a skill in another branch, a cycle (for example `Cycle in skill tree: a -> b -> a`) and an unknown `icon`.
+
+Icon licences: brand logos come from Simple Icons (CC0 1.0; the logos remain trademarks of their owners) and line icons from Lucide (ISC License). The Lucide copyright and permission notice is kept at the top of `src/lib/skill-icons.ts`.
 
 ## Public API
 

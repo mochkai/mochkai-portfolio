@@ -157,6 +157,8 @@ test.describe("pages", () => {
     // Clicking the <img> locator itself would fail Playwright's hit-target check, because the
     // stretched link (correctly) sits on top of it; click the card at the image's position.
     const card = page.getByTestId("project-card").first();
+    // The quest board streams in behind a "Loading quests…" fallback: wait until it is shown.
+    await expect(card.locator("img")).toBeVisible();
     const cardBox = (await card.boundingBox())!;
     const imgBox = (await card.locator("img").boundingBox())!;
     await card.click({
@@ -185,6 +187,8 @@ test.describe("pages", () => {
     await page.goto("/projects");
     const tilt = page.getByTestId("tilt-card").first();
     await expect(tilt).toHaveAttribute("data-tilt", "on");
+    // The quest board streams in behind a "Loading quests…" fallback: wait until it is shown.
+    await expect(tilt).toBeVisible();
     const box = (await tilt.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.move(box.x + box.width - 24, box.y + 24, { steps: 5 });
@@ -204,6 +208,8 @@ test.describe("pages", () => {
     await page.goto("/projects");
     const tilt = page.getByTestId("tilt-card").first();
     await expect(tilt).toHaveAttribute("data-tilt", "off");
+    // The quest board streams in behind a "Loading quests…" fallback: wait until it is shown.
+    await expect(tilt).toBeVisible();
     const box = (await tilt.boundingBox())!;
     await page.mouse.move(box.x + box.width - 24, box.y + 24, { steps: 5 });
     await expect(tilt).toHaveCSS("transform", "none");
@@ -531,13 +537,15 @@ test.describe("pages", () => {
     });
   }
 
-  test("about skill tree shows ranks as text and no progress bars", async ({ page }) => {
+  test("about skill map gives ranks as text and has no progress bars", async ({ page }) => {
     await page.goto("/about");
     const skills = page.getByRole("region", { name: "Skills" });
     await expect(skills.getByTestId("skill-node").first()).toHaveAccessibleName(
       /, (Mastered|Proficient|Learning)/,
     );
-    await expect(skills.getByTestId("skill-node").first()).toContainText(
+    // The ring is decoration; the rank is text in the details panel too.
+    await skills.getByTestId("skill-node").first().click();
+    await expect(skills.getByTestId("skill-details")).toContainText(
       /(Mastered|Proficient|Learning)/,
     );
     await expect(page.getByRole("progressbar")).toHaveCount(0);
@@ -582,19 +590,19 @@ test.describe("pages", () => {
     await expect(page.getByTestId("project-card")).toHaveCount(0);
   });
 
-  test("skill pips unlock when motion is allowed", async ({ page }) => {
+  test("skill rank rings unlock when motion is allowed", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/about");
-    await expect(page.locator('[data-testid="rank-pip"][data-lit="true"]').first()).toHaveCSS(
+    await expect(page.locator('[data-testid="rank-segment"][data-lit="true"]').first()).toHaveCSS(
       "animation-name",
       "pip-unlock",
     );
   });
 
-  test("skill pip unlock is off under reduced motion", async ({ page }) => {
+  test("skill rank ring unlock is off under reduced motion", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/about");
-    const lit = page.locator('[data-testid="rank-pip"][data-lit="true"]');
+    const lit = page.locator('[data-testid="rank-segment"][data-lit="true"]');
     await expect(lit.first()).toHaveCSS("animation-name", "none");
     await expect(lit.first()).toHaveCSS("opacity", "1");
   });
@@ -605,20 +613,22 @@ test.describe("pages", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/about");
     const skills = page.getByRole("region", { name: "Skills" });
-    const first = skills.getByTestId("skill-node").first();
-    // Tab through the page until the tree's single Tab stop (its first skill) has focus.
-    for (let i = 0; i < 60 && !(await first.evaluate((el) => el === document.activeElement)); i++) {
+    const start = skills.getByRole("button", { name: /^Start,/ });
+    // Tab through the page until the map's single Tab stop (the start node) has focus.
+    for (let i = 0; i < 60 && !(await start.evaluate((el) => el === document.activeElement)); i++) {
       await page.keyboard.press("Tab");
     }
-    await expect(first).toBeFocused();
-    await expect(first).toHaveCSS("outline-style", "solid");
-    await expect(first).toHaveCSS("outline-width", "2px");
+    await expect(start).toBeFocused();
+    await expect(start.getByTestId("node-focus-ring")).toHaveCSS("opacity", "1");
     // Arrow to a skill with quests, then Tab moves on to its link in the details panel.
     const link = skills.getByTestId("skill-details").getByRole("link");
     for (let i = 0; i < 30 && (await link.count()) === 0; i++) {
       await page.keyboard.press("ArrowDown");
     }
-    await page.keyboard.press("Tab");
+    // Past any "Unlocks" chips to the quest link.
+    for (let i = 0; i < 6 && !(await link.evaluate((el) => el === document.activeElement)); i++) {
+      await page.keyboard.press("Tab");
+    }
     await expect(link).toBeFocused();
     await expect(link).toHaveCSS("outline-style", "solid");
   });

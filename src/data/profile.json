@@ -19,144 +19,169 @@
     {
       "id": "frontend",
       "name": "Front end",
+      "icon": "frontend",
       "skills": [
         {
           "id": "html-css",
           "name": "HTML & CSS",
-          "rank": "mastered"
+          "rank": "mastered",
+          "icon": "html-css"
         },
         {
           "id": "javascript",
           "name": "JavaScript",
           "rank": "mastered",
-          "requires": ["html-css"]
+          "requires": ["html-css"],
+          "icon": "javascript"
         },
         {
           "id": "typescript",
           "name": "TypeScript",
           "rank": "mastered",
-          "requires": ["javascript"]
+          "requires": ["javascript"],
+          "icon": "typescript"
         },
         {
           "id": "react",
           "name": "React",
           "rank": "mastered",
-          "requires": ["typescript"]
+          "requires": ["typescript"],
+          "icon": "react"
         },
         {
           "id": "nextjs",
           "name": "Next.js",
           "rank": "mastered",
-          "requires": ["react"]
+          "requires": ["react"],
+          "icon": "nextjs"
         },
         {
           "id": "tailwind-css",
           "name": "Tailwind CSS",
           "rank": "proficient",
-          "requires": ["html-css"]
+          "requires": ["html-css"],
+          "icon": "tailwind-css"
         }
       ]
     },
     {
       "id": "backend",
       "name": "Back end",
+      "icon": "backend",
       "skills": [
         {
           "id": "python",
           "name": "Python",
-          "rank": "proficient"
+          "rank": "proficient",
+          "icon": "python"
         },
         {
           "id": "fastapi",
           "name": "FastAPI",
           "rank": "proficient",
-          "requires": ["python"]
+          "requires": ["python"],
+          "icon": "fastapi"
         },
         {
           "id": "nodejs",
           "name": "Node.js",
-          "rank": "proficient"
+          "rank": "proficient",
+          "icon": "nodejs"
         },
         {
           "id": "rest-apis",
           "name": "REST APIs",
           "rank": "mastered",
-          "requires": ["python", "nodejs"]
+          "requires": ["python", "nodejs"],
+          "icon": "rest-apis"
         },
         {
           "id": "sql",
           "name": "SQL",
-          "rank": "proficient"
+          "rank": "proficient",
+          "icon": "sql"
         },
         {
           "id": "postgresql",
           "name": "PostgreSQL",
           "rank": "proficient",
-          "requires": ["sql"]
+          "requires": ["sql"],
+          "icon": "postgresql"
         }
       ]
     },
     {
       "id": "devops",
       "name": "DevOps",
+      "icon": "devops",
       "skills": [
         {
           "id": "git",
           "name": "Git",
-          "rank": "mastered"
+          "rank": "mastered",
+          "icon": "git"
         },
         {
           "id": "docker",
           "name": "Docker",
           "rank": "proficient",
-          "requires": ["git"]
+          "requires": ["git"],
+          "icon": "docker"
         },
         {
           "id": "ci-cd",
           "name": "CI/CD",
           "rank": "proficient",
-          "requires": ["docker"]
+          "requires": ["docker"],
+          "icon": "ci-cd"
         },
         {
           "id": "vitest",
           "name": "Vitest",
           "rank": "proficient",
-          "requires": ["git"]
+          "requires": ["git"],
+          "icon": "vitest"
         },
         {
           "id": "playwright",
           "name": "Playwright",
           "rank": "learning",
-          "requires": ["vitest"]
+          "requires": ["vitest"],
+          "icon": "playwright"
         }
       ]
     },
     {
       "id": "ai-dev",
       "name": "AI dev",
+      "icon": "ai-dev",
       "skills": [
         {
           "id": "llm-apis",
           "name": "LLM APIs",
-          "rank": "proficient"
+          "rank": "proficient",
+          "icon": "llm-apis"
         },
         {
           "id": "prompt-engineering",
           "name": "Prompt engineering",
           "rank": "proficient",
-          "requires": ["llm-apis"]
+          "requires": ["llm-apis"],
+          "icon": "prompt-engineering"
         },
         {
           "id": "ai-agents",
           "name": "AI agents",
           "rank": "learning",
-          "requires": ["prompt-engineering"]
+          "requires": ["prompt-engineering"],
+          "icon": "ai-agents"
         },
         {
           "id": "langgraph",
           "name": "LangGraph",
           "rank": "learning",
-          "requires": ["ai-agents"]
+          "requires": ["ai-agents"],
+          "icon": "langgraph"
         }
       ]
     }
